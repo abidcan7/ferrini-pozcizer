@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Zip Poz Çizer</title>
-<script src="lib/xlsx.full.min.js"></script>
+<script src="lib/xlsx.full.min.js" defer></script>
 <script src="assets/profiller.js"></script>
 <style>
   :root { --ink:#1f2a33; --muted:#6b7680; --line:#e1e5e8; --soft:#f4f6f5; --accent:#2e8b47; --accent-d:#1d5e30;
@@ -354,12 +354,13 @@ function sectionOf(kapak, box) {
 
 function drawPoz(p, i) {
   const W = +p.iw || 1000, H = +p.ih || 1000;
-  const s = Math.min(440 / W, 330 / H);
+  // Sabit oranlı çizim: her poz aynı kalıpta çizilir, gerçek ölçüler yalnızca etiketlerde yazar
+  const s = 0.13;                                   // doku/derz ölçeği için temsilî mm→px
   const sec = sectionOf(p.kapak, p.box);
-  const e = Math.max(s, 0.5);                       // kutu/dikme detay ölçeği (okunabilirlik için büyütülmüş)
+  const e = 0.56;                                   // kutu/dikme detay ölçeği
   const Dp = sec.w * e, bh = sec.h * e;             // kutu derinliği ve yüksekliği
-  const fw = Math.max(W * s, 230);
-  const bot = Math.max(H * s, bh + 150);            // kutu üstünden dikme altına toplam yükseklik
+  const fw = 400;
+  const bot = bh + 230;                             // kutu üstünden dikme altına toplam yükseklik
   const rw = 21 * e, rd = 44 * e;                   // dikme ön yüz genişliği ve derinliği
   const zf = Dp - (sec.slot[0] + sec.slot[1]) / 2 * e;   // kumaş düzlemi (kutu yarığı hizası)
   const zr0 = Dp - rd;                              // dikme ön yüzü
@@ -422,9 +423,6 @@ function drawPoz(p, i) {
       <stop offset="0" stop-color="#e2b77a" stop-opacity=".35"/><stop offset="1" stop-color="#e2b77a" stop-opacity="0"/></radialGradient>
     <radialGradient id="${id}vig" cx=".5" cy=".5" r=".72">
       <stop offset=".62" stop-color="#fff" stop-opacity="0"/><stop offset="1" stop-color="#fff" stop-opacity=".95"/></radialGradient>
-    <filter id="${id}grain" x="0" y="0" width="100%" height="100%">
-      <feTurbulence type="fractalNoise" baseFrequency=".75" numOctaves="2" seed="${i + 3}"/>
-      <feColorMatrix values="0 0 0 0 .42  0 0 0 0 .35  0 0 0 0 .26  1.1 0 0 0 -.42"/></filter>
     <filter id="${id}blur" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="${(4 * Math.max(e, 0.6)).toFixed(1)}"/></filter>
     <filter id="${id}blurS" x="-20%" y="-50%" width="140%" height="200%"><feGaussianBlur stdDeviation="3"/></filter>
     <filter id="${id}blurL" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="9"/></filter>
@@ -432,11 +430,14 @@ function drawPoz(p, i) {
       <path d="M0 0L10 5L0 10z" fill="${DIM}"/></marker>
     <marker id="${id}arG" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
       <path d="M0 0L10 5L0 10z" fill="#444"/></marker>`);
-  if (pc.wood) for (const [nm, rot] of [["woodH", 0], ["woodV", 90]]) defs.push(`
-    <pattern id="${id}${nm}" width="70" height="9" patternUnits="userSpaceOnUse" patternTransform="rotate(${rot})">
-      <rect width="70" height="9" fill="${pc.wood[0]}"/>
-      <path d="M0 2Q18 1 35 2.6T70 2M0 5.6Q22 6.8 40 5.2T70 6.2M0 8Q30 7.4 70 8.3" stroke="${pc.wood[1]}" stroke-width=".8" fill="none" opacity=".75"/>
-      <path d="M0 3.8Q25 4.4 50 3.6T70 4" stroke="${tint(pc.wood[0], .25)}" stroke-width=".6" fill="none" opacity=".6"/></pattern>`);
+  // ahşap damarı: tekrarlayan renk geçişi (desen yerine; PDF'i şişirmez)
+  if (pc.wood) {
+    const [w0, w1] = pc.wood, wl = tint(w0, .22);
+    const stops = [[0, w0], [.12, w1], [.18, w0], [.38, wl], [.46, w0], [.6, w1], [.64, w0], [.82, wl], [.9, w1], [1, w0]]
+      .map(([o, c]) => `<stop offset="${o}" stop-color="${c}"/>`).join("");
+    defs.push(`<linearGradient id="${id}woodH" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="0.6" y2="7.5" spreadMethod="repeat">${stops}</linearGradient>
+      <linearGradient id="${id}woodV" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="7.5" y2="0.6" spreadMethod="repeat">${stops}</linearGradient>`);
+  }
   // Silindir gradyanı (ekranda dikey; y = yc - z*DY sabit olduğundan tüm x'te aynı)
   const cylGrad = (name, cy, R, stops) => {
     const a = R * Math.hypot(1, DY);
@@ -550,7 +551,7 @@ function drawPoz(p, i) {
     poly(hull(circ(xa, rr).concat(circ(xb, rr))), fill, `stroke="#000" stroke-opacity=".25" stroke-width=".4"`);
     poly(circ(xb, rr), endFill || fill, `stroke="#000" stroke-opacity=".3" stroke-width=".4"`);
   };
-  const Lm = Math.min(Math.max(560 * s, 62), fw * 0.42);
+  const Lm = 100;
   const head = 7 * e;
   let mx0, mx1, motorAnchor;
   if (hasMotor && side === "L") {
@@ -710,7 +711,7 @@ function drawPoz(p, i) {
     }
     S.push(`<path d="${d.join("")}" stroke="#cdbfa9" stroke-width="1.1"/><path d="${d.join("")}" stroke="#fffaf0" stroke-width=".6" stroke-opacity=".6" transform="translate(1 1)"/>`);
   }
-  S.push(`<rect x="${sx0}" y="${sy0}" width="${vb[2]}" height="${yW - sy0}" filter="url(#${id}grain)" opacity=".5"/>`);
+  S.push(`<image href="assets/doku.png" x="${sx0}" y="${sy0}" width="${vb[2]}" height="${yW - sy0}" preserveAspectRatio="none" opacity=".55"/>`);
   // ağaç gölgesi lekeleri
   S.push(`<g filter="url(#${id}blurL)" fill="#5a4a35" opacity=".09">${[[.08, .1, 38, 16], [.2, .04, 26, 12], [.05, .3, 22, 30], [.9, .08, 34, 14], [.97, .28, 20, 26], [.15, .55, 30, 12]]
     .map(([fx, fy, rx, ry]) => `<ellipse cx="${(sx0 + fx * vb[2]).toFixed(1)}" cy="${(sy0 + fy * (yW - sy0)).toFixed(1)}" rx="${rx}" ry="${ry}" transform="rotate(-25 ${(sx0 + fx * vb[2]).toFixed(1)} ${(sy0 + fy * (yW - sy0)).toFixed(1)})"/>`).join("")}</g>`);
@@ -723,7 +724,7 @@ function drawPoz(p, i) {
     const xs = sx0 - Dp * DX, xe = sx1 - zNear * DX;
     for (let x = Math.floor(xs / t) * t; x < xe; x += t) { const a = Q(x, bot, Dp), b = Q(x, bot, zNear); d.push(`M${a[0].toFixed(1)} ${a[1].toFixed(1)}L${b[0].toFixed(1)} ${b[1].toFixed(1)}`); }
     S.push(`<path d="${d.join("")}" stroke="#c9b9a2" stroke-width=".9"/>`);
-    S.push(`<rect x="${sx0}" y="${yW}" width="${vb[2]}" height="${sy1 - yW}" filter="url(#${id}grain)" opacity=".4"/>`); }
+    S.push(`<image href="assets/doku.png" x="${sx0}" y="${yW}" width="${vb[2]}" height="${sy1 - yW}" preserveAspectRatio="none" opacity=".45"/>`); }
   S.push(`<line x1="${sx0}" y1="${yW}" x2="${sx1}" y2="${yW}" stroke="#b8a68c" stroke-width="1"/>`);
   // kenarlarda sayfaya yumuşak geçiş
   S.push(`<rect x="${sx0}" y="${sy0}" width="${vb[2]}" height="${sy1 - sy0}" fill="url(#${id}vig)"/></g>`);
@@ -881,8 +882,9 @@ async function load(file) {
   try {
     step(0); setProgress(.04); await frame();
     const buf = await file.arrayBuffer(); await sleep(220);
-    const wb = XLSX.read(buf, { type: "array", cellDates: true });
-    step(1, `${wb.SheetNames.length} sayfa`); setProgress(.18); await sleep(260);
+    // yalnızca gereken 2 sayfa okunur; formül/stil/VBA atlanır (≈6 kat hızlı)
+    const wb = XLSX.read(buf, { type: "array", cellDates: true, sheets: ["1PROJE", "4POZ"], cellFormula: false, cellHTML: false, cellText: false, cellStyles: false, bookVBA: false });
+    step(1, `${(file.size / 1048576).toFixed(1)} MB`); setProgress(.18); await sleep(260);
     DATA = readWorkbook(wb);
     if (!DATA.pozlar.length) throw new Error("1PROJE sayfasında poz bulunamadı.");
     step(2, DATA.head.no ? String(DATA.head.no) : ""); setProgress(.32); await sleep(260);
