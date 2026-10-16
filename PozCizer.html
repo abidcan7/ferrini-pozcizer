@@ -1,0 +1,435 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Zip Poz Çizer</title>
+<script src="lib/xlsx.full.min.js"></script>
+<style>
+  :root { --ink:#1d1f21; --muted:#6b7076; --line:#c9ccd0; --accent:#e0761c; --bg:#eef0f2; }
+  * { box-sizing:border-box; }
+  body { margin:0; font-family:"Segoe UI", Arial, sans-serif; color:var(--ink); background:var(--bg); }
+  .bar { position:sticky; top:0; z-index:5; display:flex; gap:12px; align-items:center; padding:10px 16px;
+         background:#1d1f21; color:#fff; flex-wrap:wrap; }
+  .bar b { letter-spacing:.08em; }
+  .bar button, .bar label.btn { background:var(--accent); color:#fff; border:0; padding:8px 14px; border-radius:4px;
+         font:inherit; font-weight:600; cursor:pointer; }
+  .bar label.btn.ghost { background:#3a3d41; }
+  .bar .info { color:#aab; font-size:13px; }
+  #drop { margin:40px auto; max-width:640px; border:2px dashed #9aa0a6; border-radius:10px; padding:60px 20px;
+          text-align:center; color:var(--muted); background:#fff; }
+  #drop.over { border-color:var(--accent); color:var(--accent); }
+  #pages { display:flex; flex-direction:column; align-items:center; gap:16px; padding:16px; }
+  .page { width:210mm; min-height:297mm; background:#fff; padding:10mm; box-shadow:0 2px 10px rgba(0,0,0,.12);
+          display:flex; flex-direction:column; gap:5mm; }
+  .head { display:grid; grid-template-columns:1fr 1.4fr 1fr; border:1px solid var(--ink); }
+  .head > div { padding:6px 10px; display:flex; align-items:center; justify-content:center; }
+  .head .t { font-size:18px; font-weight:700; border-left:1px solid var(--ink); border-right:1px solid var(--ink); }
+  .logo-f { font-size:24px; letter-spacing:.32em; font-weight:300; }
+  .logo-z { font-size:20px; font-weight:800; font-style:italic; color:#1b5fa8; }
+  .meta { display:grid; grid-template-columns:repeat(6,1fr); border:1px solid var(--ink); border-top:0; font-size:11px; text-align:center; }
+  .meta div { padding:3px; border-right:1px solid var(--line); }
+  .meta div:nth-child(-n+6) { font-weight:700; background:#f2f3f4; border-bottom:1px solid var(--line); }
+  .poz { border:1px solid var(--ink); display:flex; flex-direction:column; flex:1; min-height:0; }
+  .poz-h { display:flex; align-items:center; background:#1d1f21; color:#fff; font-weight:700; }
+  .poz-h .no { padding:4px 10px; font-size:20px; background:var(--accent); }
+  .poz-h .sys { padding:4px 12px; flex:1; }
+  .poz-h .adet { padding:4px 12px; font-size:16px; }
+  .poz-b { display:grid; grid-template-columns:1fr 58mm; flex:1; }
+  .poz-b > svg { width:100%; height:100%; max-height:112mm; display:block; padding:4mm; }
+  .spec { border-left:1px solid var(--line); font-size:11px; padding:6px 8px; display:flex; flex-direction:column; gap:5px; }
+  .spec .k { color:var(--muted); font-size:9.5px; font-weight:700; letter-spacing:.04em; text-transform:uppercase; }
+  .spec .v { font-weight:600; }
+  .sw { display:inline-block; width:12px; height:12px; border:1px solid #888; vertical-align:-2px; margin-right:5px; }
+  .warn { color:#c0392b; }
+  .ctrl { display:flex; gap:8px; padding:6px 8px; background:#fff6ec; border-top:1px dashed var(--accent); font-size:12px; flex-wrap:wrap; align-items:center; }
+  .ctrl select { font:inherit; font-size:12px; }
+  @page { size:A4 portrait; margin:0; }
+  @media print {
+    body { background:#fff; }
+    .bar, #drop, .ctrl { display:none !important; }
+    #pages { padding:0; gap:0; }
+    .page { box-shadow:none; page-break-after:always; break-after:page; height:297mm; }
+    .page:last-child { page-break-after:auto; break-after:auto; }
+    * { -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+  }
+</style>
+</head>
+<body>
+<div class="bar">
+  <b>ZİP POZ ÇİZER</b>
+  <label class="btn ghost">Excel aç<input type="file" id="file" accept=".xlsm,.xlsx,.xls" hidden></label>
+  <button id="pdf" disabled>PDF kaydet</button>
+  <span class="info" id="info">Proje Excel'ini (.xlsm) sürükleyin veya açın.</span>
+</div>
+<div id="drop">Proje Excel dosyasını buraya bırakın<br><small>1PROJE sayfasından sipariş verisi, 4POZ sayfasından imalat ölçüleri okunur.</small></div>
+<div id="pages"></div>
+
+<script>
+// ---------- Sabit tablolar ----------
+const RAL = { 7016:"#383e42", 9005:"#0e0e10", 9016:"#f1f0ea", 9010:"#f1ece1", 7039:"#6c6960", 8014:"#4a3526",
+  7048:"#797669", 9006:"#a1a1a0", 7001:"#8a9597", 3004:"#75151e", 8019:"#3d3635", 7006:"#75695e", 7021:"#2f3234",
+  9002:"#e7ebda", 7036:"#9a9697", 8016:"#4c2b20", 7046:"#7e868a", 9007:"#878581", 9001:"#fdf4e3", 7035:"#c5c7c4" };
+const WOOD = { "ALTINMEŞE":["#b8792f","#8f5a1f"], "FINDIK":["#7a4a26","#5a331a"], "MENEGGİO":["#6e4a2e","#4f3420"] };
+const FABRIC_COLORS = [ ["DEEPBLACK","#141414"],["CHARCOAL","#2e2e2f"],["ANTRAS","#3a3c3e"],["BRONZE","#6b5a45"],
+  ["DARKGREY","#4b4d4f"],["SHADE","#6b6b66"],["CONCRETE","#9a9a95"],["BOULDER","#a39e93"],["PEARLGREY","#c8c8c2"],
+  ["GREY","#8c8c8c"],["SANDSTONE","#cdbb9a"],["SANDYBEIGE","#cfbf9f"],["CHAMPAGNE","#d9c9a3"],["LINEN","#e6dccb"],
+  ["BEIGE","#d8c8a8"],["TAUPE","#8f8273"],["RED","#a3262a"],["BLUE","#2b3f6b"],["GREEN","#4a6b3a"],["ORANGE","#d46a1f"],
+  ["GOLD","#b8963e"],["COPPER","#9a5b38"],["WHITE","#f2f2ee"],["ALU","#b9bcbf"] ];
+const FABRIC_DEFAULT = { SCREEN:"#2e2e2f", COPACO:"#8c8c8c", BLACOUT:"#e9e9e6", "ŞEFFAF":"#dbe8ee", OPAK:"#ededea" };
+const MOTOR_DIRS = ["DIŞTAN BAKIŞ SAĞ","DIŞTAN BAKIŞ SOL","İÇTEN BAKIŞ SAĞ","İÇTEN BAKIŞ SOL"];
+const KAPAK = { soft:"Soft", sharp:"Sharp", wave:"Wave", sharp130:"130 Sharp", round:"Round" };
+
+// ---------- Yardımcılar ----------
+const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;" }[c]));
+const blank = v => v === undefined || v === null || v === "" || v === 0 || v === "0" || (typeof v === "string" && v.startsWith("#"));
+const val = v => blank(v) ? "" : v;
+
+function kapakOf(sys) {
+  const s = String(sys).toUpperCase();
+  if (s.includes("WAWE") || s.includes("WAVE")) return "wave";
+  if (s.includes("130")) return "sharp130";
+  if (s.includes("SOFT")) return "soft";
+  if (s.includes("ROUND")) return "round";
+  return "sharp";
+}
+function profileColor(c) {
+  const s = String(c ?? "").toUpperCase().trim();
+  for (const k in WOOD) if (s.includes(k)) return { wood: WOOD[k], hex: WOOD[k][0] };
+  const m = s.match(/\d{4}/);
+  if (m && RAL[m[0]]) return { hex: RAL[m[0]] };
+  return { hex: "#7d8287", unknown: true };
+}
+function fabricColor(type, code) {
+  const s = String(code ?? "").toUpperCase();
+  for (const [k, h] of FABRIC_COLORS) if (s.includes(k)) return h;
+  const t = String(type ?? "").toUpperCase();
+  for (const k in FABRIC_DEFAULT) if (t.includes(k)) return FABRIC_DEFAULT[k];
+  return "#b5b7b4";
+}
+function fabricKind(type) {
+  const t = String(type ?? "").toUpperCase();
+  if (t.includes("BLACOUT") || t.includes("BLACKOUT") || t.includes("OPAK")) return "solid";
+  if (t.includes("ŞEFFAF")) return "clear";
+  return "mesh";
+}
+// Motor yönü: çizim dıştan bakıştır; içten sağ = dıştan sol
+function motorSide(dir) {
+  const s = String(dir ?? "").toUpperCase();
+  if (!s) return null;
+  const right = s.includes("SAĞ");
+  return s.includes("İÇTEN") ? (right ? "L" : "R") : (right ? "R" : "L");
+}
+
+// ---------- Excel okuma ----------
+function readWorkbook(wb) {
+  const sh = wb.Sheets["1PROJE"], pz = wb.Sheets["4POZ"];
+  if (!sh) throw new Error("1PROJE sayfası bulunamadı.");
+  const c = (s, a) => s && s[a] ? s[a].v : undefined;
+  const fmtDate = v => v instanceof Date ? v.toLocaleDateString("tr-TR") : val(v);
+  const head = { tarih: fmtDate(c(sh,"B3")), il: val(c(sh,"C3")), veren: val(c(sh,"D3")), firma: val(c(sh,"E3")),
+                 proje: val(c(sh,"F3")), no: val(c(sh,"G3")) };
+  // 4POZ: 20 satırlık bloklar, iki sütun (B ve L)
+  const imalat = {};
+  if (pz) for (let br = 9; br < 400; br += 20) for (const bc of [1, 11]) {
+    const a = (dr, dc) => XLSX.utils.encode_cell({ r: br - 1 + dr, c: bc + dc });
+    const no = c(pz, a(0, 1));
+    if (blank(no) || blank(c(pz, a(0, 2)))) continue;
+    imalat[no] = { w: c(pz, a(17, 4)), h: c(pz, a(7, 1)), kumanda: val(c(pz, a(13, 8))) };
+  }
+  const pozlar = [];
+  for (let r = 7; r <= 60; r++) {
+    const g = col => c(sh, col + r);
+    const sys = g("C");
+    if (blank(sys) || blank(g("B"))) continue;
+    const no = g("B"), im = imalat[no] || {};
+    pozlar.push({
+      no, sys, adet: g("D") || 1, w: g("E"), h: g("F"), olcu: val(g("G")), renk: val(g("H")),
+      kumas: val(g("I")), kumasRenk: val(g("K")), motor: val(g("L")), motorYon: val(g("M")),
+      kumanda: val(g("N")), kumandaAdet: val(g("O")), baski: val(g("P")), boya: val(g("R")), musPoz: val(g("T")),
+      iw: blank(im.w) ? g("E") : im.w, ih: blank(im.h) ? g("F") : im.h, imKumanda: im.kumanda,
+      kapak: kapakOf(sys)
+    });
+  }
+  return { head, pozlar };
+}
+
+// ---------- Çizim ----------
+const DX = 0.52, DY = 0.34;               // eğik izdüşüm derinlik vektörü
+function hull(pts) {
+  pts = pts.slice().sort((a, b) => a[0] - b[0] || a[1] - b[1]);
+  const cr = (o, a, b) => (a[0]-o[0])*(b[1]-o[1]) - (a[1]-o[1])*(b[0]-o[0]);
+  const lo = [], up = [];
+  for (const p of pts) { while (lo.length >= 2 && cr(lo[lo.length-2], lo[lo.length-1], p) <= 0) lo.pop(); lo.push(p); }
+  for (const p of pts.reverse()) { while (up.length >= 2 && cr(up[up.length-2], up[up.length-1], p) <= 0) up.pop(); up.push(p); }
+  return lo.slice(0, -1).concat(up.slice(0, -1));
+}
+const ptsStr = a => a.map(p => p[0].toFixed(1) + "," + p[1].toFixed(1)).join(" ");
+
+// Kutu kesit profili: (z, y) birim; z=0 ön, z=1 duvar; y=0 üst, y=1 alt
+function profile(kind) {
+  const arc = (cz, cy, rz, ry, a0, a1, n = 10) => Array.from({ length: n + 1 }, (_, i) => {
+    const t = a0 + (a1 - a0) * i / n; return [cz + rz * Math.cos(t), cy + ry * Math.sin(t)]; });
+  const P = Math.PI;
+  switch (kind) {
+    case "soft":  return [[1,0],[0.32,0], ...arc(0.32,0.5,0.32,0.5,-P/2,-3*P/2,14).slice(1,-1), [0.32,1],[1,1]];
+    case "round": return [[1,0],[0.5,0], ...arc(0.5,0.5,0.5,0.5,-P/2,-3*P/2,16).slice(1,-1), [0.5,1],[1,1]];
+    case "wave":  return [[1,0],[0.28,0], ...arc(0.28,0.27,0.22,0.27,-P/2,-P,7).slice(1),
+                          [0.1,0.52], ...arc(0.26,0.76,0.2,0.24,-P,-3*P/2,7), [1,1]];
+    default:      return [[1,0],[0,0],[0,1],[1,1]];
+  }
+}
+
+function drawPoz(p, i) {
+  const W = +p.iw || 1000, H = +p.ih || 1000;
+  let s = Math.min(420 / W, 340 / H);
+  let fw = Math.max(W * s, 200), fh = Math.max(H * s, 200);
+  const big = p.kapak === "sharp130";
+  const D = big ? 78 : 66, bh = big ? 70 : 58, rw = 15;
+  const x0 = 0, y0 = 0;
+  const bb = [1e9, 1e9, -1e9, -1e9];
+  const ext = (x, y) => { bb[0] = Math.min(bb[0], x); bb[1] = Math.min(bb[1], y); bb[2] = Math.max(bb[2], x); bb[3] = Math.max(bb[3], y); };
+  const P = (x, y, z) => { const q = [x0 + x + z * DX, y0 + y - z * DY]; ext(q[0], q[1]); return q; };
+  const pc = profileColor(p.renk), fc = fabricColor(p.kumas, p.kumasRenk), fk = fabricKind(p.kumas);
+  const side = motorSide(p.motorYon) || p.forceSide || "R";
+  const hasMotor = !String(p.motor).toUpperCase().includes("MOTORSUZ");
+  const pf = profile(p.kapak).map(([z, y]) => [z * D, y * bh]);
+  const id = "p" + i;
+  const prof = pc.wood ? `url(#${id}wood)` : pc.hex;
+  const out = [];
+
+  // defs: kumaş dokusu, ahşap, metal
+  out.push(`<defs>
+    <pattern id="${id}mesh" width="5" height="5" patternUnits="userSpaceOnUse">
+      <rect width="5" height="5" fill="${fc}"/>
+      ${fk === "mesh" ? `<path d="M0 .5H5M.5 0V5" stroke="${shade(fc, 0.25)}" stroke-width=".7"/>` : ""}
+      ${fk === "clear" ? `<path d="M0 5L5 0" stroke="#fff" stroke-opacity=".5" stroke-width=".6"/>` : ""}
+    </pattern>
+    <linearGradient id="${id}fshade" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#fff" stop-opacity=".22"/><stop offset=".6" stop-color="#fff" stop-opacity="0"/>
+      <stop offset="1" stop-color="#000" stop-opacity=".18"/></linearGradient>
+    ${pc.wood ? `<pattern id="${id}wood" width="60" height="8" patternUnits="userSpaceOnUse">
+      <rect width="60" height="8" fill="${pc.wood[0]}"/>
+      <path d="M0 2Q15 1 30 2.5T60 2M0 5.5Q20 6.5 35 5T60 6" stroke="${pc.wood[1]}" stroke-width=".9" fill="none" opacity=".7"/></pattern>` : ""}
+    <linearGradient id="${id}tube" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#e9ebed"/><stop offset=".45" stop-color="#b5babf"/><stop offset="1" stop-color="#6f757b"/></linearGradient>
+    <linearGradient id="${id}motor" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ffb066"/><stop offset=".5" stop-color="${"#e0761c"}"/><stop offset="1" stop-color="#9c4a08"/></linearGradient>
+    <marker id="${id}ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0 0L10 5L0 10z" fill="#1d1f21"/></marker>
+  </defs>`);
+
+  const poly = (pts, fill, extra = "") => out.push(`<polygon points="${ptsStr(pts)}" fill="${fill}" ${extra}/>`);
+  const ln = "stroke=\"#1d1f21\" stroke-width=\".9\" stroke-linejoin=\"round\"";
+  const top = bh, bot = bh + fh;
+
+  // duvar gölgesi
+  poly([P(-6, top, D), P(fw + 6, top, D), P(fw + 6, bot + 4, D), P(-6, bot + 4, D)], "#000", "opacity=\".06\"");
+
+  // kumaş
+  const zf = D - 24, barY = bot - 16;
+  poly([P(rw, top, zf), P(fw - rw, top, zf), P(fw - rw, barY, zf), P(rw, barY, zf)], `url(#${id}mesh)`, ln);
+  poly([P(rw, top, zf), P(fw - rw, top, zf), P(fw - rw, barY, zf), P(rw, barY, zf)], `url(#${id}fshade)`);
+  if (!blank(p.baski)) {
+    const c = P(fw / 2, top + (barY - top) / 2, zf);
+    out.push(`<text x="${c[0]}" y="${c[1]}" text-anchor="middle" font-size="13" font-weight="700" fill="#fff" stroke="#000" stroke-width=".3" opacity=".85">BASKI / LOGO</text>`);
+  }
+
+  // alt çıta
+  const bz0 = D - 38, bz1 = D - 10;
+  poly([P(rw, barY, bz0), P(fw - rw, barY, bz0), P(fw - rw, barY, bz1), P(rw, barY, bz1)], shadeFill(prof, pc, 0.15), ln);
+  poly([P(rw, barY, bz0), P(fw - rw, barY, bz0), P(fw - rw, bot - 3, bz0), P(rw, bot - 3, bz0)], prof, ln);
+
+  // dikmeler (yan profiller): ön yüz + sağ yan yüz
+  const rz0 = 14, rz1 = D;
+  for (const xa of [0, fw - rw]) {
+    poly([P(xa + rw, top, rz0), P(xa + rw, top, rz1), P(xa + rw, bot, rz1), P(xa + rw, bot, rz0)], prof, ln);
+    poly([P(xa + rw, top, rz0), P(xa + rw, top, rz1), P(xa + rw, bot, rz1), P(xa + rw, bot, rz0)], "#000", "opacity=\".28\"");
+    poly([P(xa, top, rz0), P(xa + rw, top, rz0), P(xa + rw, bot, rz0), P(xa, bot, rz0)], prof, ln);
+    poly([P(xa + 3, top, rz0), P(xa + 5, top, rz0), P(xa + 5, bot, rz0), P(xa + 3, bot, rz0)], "#fff", "opacity=\".18\"");
+  }
+
+  // kutu: arka (görünmeyen) yüzler, iç, ön yüzler
+  const strips = [];
+  for (let k = 0; k < pf.length; k++) {
+    const a = pf[k], b = pf[(k + 1) % pf.length];
+    let nz = b[1] - a[1], ny = -(b[0] - a[0]);              // dış normal (saat yönü tersi kontrolü aşağıda)
+    strips.push({ a, b, nz, ny });
+  }
+  // profil yönünü düzelt: normal dışarı baksın
+  const area = pf.reduce((s, a, k) => { const b = pf[(k + 1) % pf.length]; return s + a[0] * b[1] - b[0] * a[1]; }, 0);
+  const sgn = area > 0 ? -1 : 1;
+  const x1 = fw;
+  const quad = st => [P(0, st.a[1], st.a[0]), P(x1, st.a[1], st.a[0]), P(x1, st.b[1], st.b[0]), P(0, st.b[1], st.b[0])];
+  const vis = st => { const nz = st.nz * sgn, ny = st.ny * sgn, l = Math.hypot(nz, ny) || 1; return (-nz * 0.75 - ny * 0.66) / l; };
+  // iç karanlık
+  poly([P(0, 0, D), P(x1, 0, D), P(x1, bh, D), P(0, bh, D)], "#2a2c2f", ln);
+  for (const st of strips) if (vis(st) <= 0.02) poly(quad(st), "#3a3d41", ln);
+
+  // boru + motor
+  const zc = D * 0.55, yc = bh * 0.47, r = bh * 0.27;
+  const circ = (x, rr) => Array.from({ length: 24 }, (_, k) => { const t = k / 24 * 2 * Math.PI;
+    return P(x, yc + rr * Math.sin(t), zc + rr * Math.cos(t)); });
+  const cyl = (xa, xb, rr, fill) => { poly(hull(circ(xa, rr).concat(circ(xb, rr))), fill, ln); poly(circ(xb, rr), shadeFill(fill, null, 0.0), ln); };
+  cyl(10, fw - 10, r, `url(#${id}tube)`);
+  const Lm = Math.min(Math.max(fw * 0.34, 90), 150);
+  let motorAnchor;
+  if (hasMotor) {
+    if (side === "R") { cyl(fw - 10 - Lm, fw - 4, r * 0.86, `url(#${id}motor)`); motorAnchor = P(fw - 10 - Lm / 2, yc - r, zc); }
+    else              { cyl(4, 10 + Lm, r * 0.86, `url(#${id}motor)`);           motorAnchor = P(10 + Lm / 2, yc - r, zc); }
+    // kablo: motor başından dikme içine
+    const hx = side === "R" ? fw - 4 : 4, h0 = P(hx, yc, zc), rail = P(side === "R" ? fw - rw / 2 : rw / 2, top + 40, rz0 + 10);
+    out.push(`<path d="M${h0[0]} ${h0[1]}C${h0[0] + (side === "R" ? 18 : -18)} ${h0[1] + 10} ${rail[0]} ${rail[1] - 40} ${rail[0]} ${rail[1]}" stroke="#111" stroke-width="2.2" fill="none" stroke-dasharray="${side === "R" ? "0" : "0"}"/>`);
+  }
+
+  // ön (görünen) yüzler — kesit görünümü için yarı saydam
+  for (const st of strips) {
+    const v = vis(st);
+    if (v <= 0.02) continue;
+    const isTop = Math.abs(st.ny * sgn) > Math.abs(st.nz * sgn);
+    poly(quad(st), prof, `${ln} fill-opacity="${isTop ? 0.95 : 0.32}"`);
+    poly(quad(st), v > 0.6 ? "#fff" : "#000", `opacity="${isTop ? 0.12 : 0.06}"`);
+  }
+  // sağ uç: açık kapak ağzı
+  const endR = pf.map(([z, y]) => P(x1, y, z));
+  out.push(`<polygon points="${ptsStr(endR)}" fill="none" stroke="#1d1f21" stroke-width="1.4" stroke-dasharray="4 2"/>`);
+  const endL = pf.map(([z, y]) => P(0, y, z));
+  out.push(`<polygon points="${ptsStr(endL)}" fill="none" stroke="#1d1f21" stroke-width="1" stroke-dasharray="4 2"/>`);
+
+  // ayrılmış kapaklar
+  const capOff = 46;
+  for (const [cx, dir] of [[x1 + capOff, 1], [-capOff, -1]]) {
+    const cap = pf.map(([z, y]) => P(cx, y - 14, z));
+    const capB = pf.map(([z, y]) => P(cx - 6 * dir, y - 14, z));
+    poly(hull(cap.concat(capB)), prof, ln);
+    poly(cap, prof, ln);
+    poly(cap, "#fff", "opacity=\".15\"");
+    for (const [z, y] of [[D * 0.8, bh * 0.15], [D * 0.8, bh * 0.85]]) { const q = P(cx, y - 14, z); out.push(`<circle cx="${q[0]}" cy="${q[1]}" r="1.6" fill="#111"/>`); }
+    const a = P(cx - (capOff - 10) * dir, bh / 2, D / 2), b = P(cx - 10 * dir, bh / 2 - 14, D / 2);
+    out.push(`<line x1="${a[0]}" y1="${a[1]}" x2="${b[0]}" y2="${b[1]}" stroke="#1d1f21" stroke-dasharray="3 3" marker-start="url(#${id}ar)"/>`);
+  }
+  const capLbl = P(x1 + capOff, bh + 8, D / 2);
+  out.push(`<text x="${capLbl[0]}" y="${capLbl[1]}" font-size="10" fill="#555" text-anchor="middle">YAN KAPAK</text>`);
+
+  // motor etiketi
+  if (hasMotor) {
+    const ly = P(0, 0, D)[1] - 30; ext(motorAnchor[0] - 64, ly - 16); ext(motorAnchor[0] + 64, ly);
+    out.push(`<path d="M${motorAnchor[0]} ${motorAnchor[1]}L${motorAnchor[0]} ${ly + 6}" stroke="#e0761c" stroke-width="1.6"/>
+      <circle cx="${motorAnchor[0]}" cy="${motorAnchor[1]}" r="3" fill="#e0761c"/>
+      <rect x="${motorAnchor[0] - 62}" y="${ly - 14}" width="124" height="22" rx="3" fill="#e0761c"/>
+      <text x="${motorAnchor[0]}" y="${ly + 1}" text-anchor="middle" font-size="12.5" font-weight="700" fill="#fff">MOTOR — ${side === "R" ? "SAĞ" : "SOL"}</text>`);
+  } else {
+    const c = P(fw / 2, -50, D);
+    out.push(`<text x="${c[0]}" y="${c[1]}" text-anchor="middle" font-size="12" font-weight="700" fill="#c0392b">MOTORSUZ</text>`);
+  }
+
+  // ölçüler
+  const dimY = bot + 34, a = P(0, bot, rz0), b = P(fw, bot, rz0);
+  out.push(`<g stroke="#1d1f21" stroke-width=".8">
+    <line x1="${a[0]}" y1="${bot + y0 - rz0 * DY + 4}" x2="${a[0]}" y2="${a[1] + 38}"/>
+    <line x1="${b[0]}" y1="${bot + y0 - rz0 * DY + 4}" x2="${b[0]}" y2="${b[1] + 38}"/>
+    <line x1="${a[0]}" y1="${a[1] + 32}" x2="${b[0]}" y2="${b[1] + 32}" marker-start="url(#${id}ar)" marker-end="url(#${id}ar)"/></g>
+    <rect x="${(a[0] + b[0]) / 2 - 34}" y="${a[1] + 23}" width="68" height="18" fill="#fff"/>
+    <text x="${(a[0] + b[0]) / 2}" y="${a[1] + 37}" text-anchor="middle" font-size="15" font-weight="700">${esc(W)}</text>`);
+  const t = P(0, 0, 0), bt = P(0, bot, rz0), hx = Math.min(t[0], bt[0]) - 34;
+  out.push(`<g stroke="#1d1f21" stroke-width=".8">
+    <line x1="${t[0] - 4}" y1="${t[1]}" x2="${hx - 6}" y2="${t[1]}"/>
+    <line x1="${bt[0] - 4}" y1="${bt[1]}" x2="${hx - 6}" y2="${bt[1]}"/>
+    <line x1="${hx}" y1="${t[1]}" x2="${hx}" y2="${bt[1]}" marker-start="url(#${id}ar)" marker-end="url(#${id}ar)"/></g>
+    <rect x="${hx - 10}" y="${(t[1] + bt[1]) / 2 - 34}" width="20" height="68" fill="#fff"/>
+    <text transform="translate(${hx + 5} ${(t[1] + bt[1]) / 2}) rotate(-90)" text-anchor="middle" font-size="15" font-weight="700">${esc(H)}</text>`);
+
+
+  ext(hx - 14, a[1] + 44);
+  // viewBox'ı içeriğe göre ayarla
+  const m = 12, vb = [bb[0] - m, bb[1] - m, bb[2] - bb[0] + 2 * m, bb[3] - bb[1] + 2 * m + 16];
+  out.push(`<text x="${bb[0]}" y="${bb[3] + 18}" font-size="10" fill="#777">Dıştan görünüş · ölçüler mm (imalat) · kutu kesitli, kapaklar açık · ölçeksiz</text>`);
+  return `<svg viewBox="${vb.map(v => v.toFixed(0)).join(" ")}" xmlns="http://www.w3.org/2000/svg" font-family="Segoe UI, Arial">${out.join("")}</svg>`;
+}
+function capIcon(kind, fill) {
+  const pts = profile(kind).map(([z, y]) => [2 + z * 30, 2 + y * 26]);
+  return `<svg width="34" height="30" style="vertical-align:middle"><polygon points="${ptsStr(pts)}" fill="${fill}" stroke="#1d1f21" stroke-width="1"/></svg>`;
+}
+function shade(hex, amt) {
+  const n = parseInt(hex.slice(1), 16), f = c => Math.max(0, Math.min(255, Math.round(c * (1 - amt))));
+  return "#" + [n >> 16, (n >> 8) & 255, n & 255].map(f).map(c => c.toString(16).padStart(2, "0")).join("");
+}
+function shadeFill(fill, pc, amt) { return fill.startsWith("#") ? shade(fill, amt) : fill; }
+
+// ---------- Sayfa ----------
+let DATA = null;
+function render() {
+  const { head, pozlar } = DATA;
+  const pages = document.getElementById("pages");
+  pages.innerHTML = "";
+  const perPage = 2;
+  for (let pg = 0; pg < pozlar.length; pg += perPage) {
+    const page = document.createElement("div");
+    page.className = "page";
+    page.innerHTML = `
+      <div class="head"><div class="logo-z">ZIPLINE</div><div class="t">POZ ÇİZİMLERİ</div><div class="logo-f">FERRINI</div></div>
+      <div class="meta"><div>ÜRÜN</div><div>PROJE NO</div><div>TARİH</div><div>TEKLİF VEREN</div><div>PROJE İSMİ</div><div>MÜŞTERİ</div>
+        <div>ZİP PERDE</div><div>${esc(head.no)}</div><div>${esc(head.tarih)}</div><div>${esc(head.veren)}</div><div>${esc(head.proje)}</div><div>${esc(head.firma)}</div></div>`;
+    pozlar.slice(pg, pg + perPage).forEach((p, j) => page.appendChild(pozCard(p, pg + j)));
+    pages.appendChild(page);
+  }
+  document.getElementById("pdf").disabled = false;
+  document.getElementById("info").textContent = `${head.no} · ${pozlar.length} poz · ${pozlar.reduce((s, p) => s + (+p.adet || 1), 0)} adet`;
+  document.title = `${head.no || "Proje"} Poz Çizimleri`;
+}
+function pozCard(p, i) {
+  const el = document.createElement("div");
+  el.className = "poz";
+  const pc = profileColor(p.renk), fc = fabricColor(p.kumas, p.kumasRenk);
+  const side = motorSide(p.motorYon);
+  const yonTxt = p.motorYon ? `${esc(p.motorYon)} <small>(çizimde ${side === "R" ? "sağ" : "sol"})</small>`
+                            : `<span class="warn">Belirtilmemiş</span> — çizimde ${(p.forceSide || "R") === "R" ? "sağ" : "sol"}`;
+  const kum = p.imKumanda || (p.kumanda ? `${p.kumandaAdet || 1} ADET ${p.kumanda}` : "");
+  const row = (k, v) => v ? `<div><div class="k">${k}</div><div class="v">${v}</div></div>` : "";
+  el.innerHTML = `
+    <div class="poz-h"><span class="no">POZ ${esc(p.no)}</span><span class="sys">${esc(p.sys)}</span><span class="adet">${esc(p.adet)} ADET</span></div>
+    <div class="poz-b">${drawPoz(p, i)}
+      <div class="spec">
+        ${row("Kapak tipi", `${capIcon(p.kapak, pc.wood ? pc.wood[0] : pc.hex)} ${KAPAK[p.kapak]}`)}
+        ${row("İmalat ölçüsü (G × Y)", `${esc(p.iw)} × ${esc(p.ih)} mm`)}
+        ${row("Sipariş ölçüsü", `${esc(p.w)} × ${esc(p.h)} ${esc(p.olcu)}`)}
+        ${row("Profil rengi", `<span class="sw" style="background:${pc.wood ? pc.wood[0] : pc.hex}"></span>${esc(p.renk) || '<span class="warn">Belirtilmemiş</span>'}${p.boya ? ` <small>· ${esc(p.boya)}</small>` : ""}`)}
+        ${row("Kumaş", `<span class="sw" style="background:${fc}"></span>${esc(p.kumas)}${p.kumasRenk ? " · " + esc(p.kumasRenk) : ""}`)}
+        ${row("Motor", esc(p.motor))}
+        ${row("Motor yönü", yonTxt)}
+        ${row("Kumanda", esc(kum))}
+        ${row("Baskı / logo", esc(p.baski))}
+        ${row("Müşteri poz no", esc(p.musPoz))}
+      </div>
+    </div>
+    <div class="ctrl">Motor yönü:
+      <select data-k="motorYon">${["", ...MOTOR_DIRS].map(d => `<option ${d === p.motorYon ? "selected" : ""} value="${d}">${d || "— Excel'de yok —"}</option>`).join("")}</select>
+      Kapak: <select data-k="kapak">${Object.entries(KAPAK).map(([k, v]) => `<option ${k === p.kapak ? "selected" : ""} value="${k}">${v}</option>`).join("")}</select>
+      <span style="color:#a0640f">(sadece ekranda görünür)</span></div>`;
+  el.querySelectorAll("select").forEach(s => s.onchange = () => { p[s.dataset.k] = s.value; render(); });
+  return el;
+}
+
+// ---------- Dosya ----------
+function load(file) {
+  const fr = new FileReader();
+  fr.onload = e => {
+    try {
+      const wb = XLSX.read(e.target.result, { type: "array", cellDates: true });
+      DATA = readWorkbook(wb);
+      if (!DATA.pozlar.length) throw new Error("1PROJE sayfasında poz bulunamadı.");
+      document.getElementById("drop").style.display = "none";
+      render();
+    } catch (err) { document.getElementById("info").textContent = "Hata: " + err.message; }
+  };
+  fr.readAsArrayBuffer(file);
+}
+document.getElementById("file").onchange = e => e.target.files[0] && load(e.target.files[0]);
+document.getElementById("pdf").onclick = () => window.print();
+const drop = document.getElementById("drop");
+["dragover", "dragenter"].forEach(t => document.addEventListener(t, e => { e.preventDefault(); drop.classList.add("over"); }));
+["dragleave", "drop"].forEach(t => document.addEventListener(t, e => { e.preventDefault(); drop.classList.remove("over"); }));
+document.addEventListener("drop", e => e.dataTransfer.files[0] && load(e.dataTransfer.files[0]));
+</script>
+</body>
+</html>
