@@ -24,6 +24,10 @@
   .bar label.btn.ghost { background:rgba(255,255,255,.1); border:1px solid rgba(255,255,255,.18); }
   .bar label.btn.ghost:hover { background:rgba(255,255,255,.18); }
   .bar svg { width:16px; height:16px; }
+  .bar .lang { display:inline-flex; border:1px solid rgba(255,255,255,.22); border-radius:8px; overflow:hidden; }
+  .bar .lang button { background:none; border:0; border-radius:0; padding:7px 10px; font-size:12.5px; font-weight:700; color:#b7c2cc; letter-spacing:.06em; }
+  .bar .lang button:hover:not(.on) { background:rgba(255,255,255,.1); }
+  .bar .lang button.on { background:#fff; color:var(--navy); }
   .bar .info { color:#b7c2cc; font-size:13px; margin-left:auto; }
 
   /* yükleme alanı */
@@ -123,7 +127,7 @@
   #loading .steps li.fail { color:#c0392b; } #loading .steps li.fail i { border-color:#c0392b; background:#c0392b; }
   #loading .err { color:#c0392b; font-size:12.5px; margin-top:10px; }
   body.dragging #pages { opacity:.35; transition:opacity .15s; }
-  body.dragging::after { content:"Bırakın — poz çizimleri hesaplansın"; position:fixed; inset:12px; z-index:40; border:3px dashed var(--accent); border-radius:16px;
+  body.dragging::after { content:attr(data-drop); position:fixed; inset:12px; z-index:40; border:3px dashed var(--accent); border-radius:16px;
                          display:grid; place-items:center; font-size:22px; font-weight:700; color:var(--accent-d); background:rgba(232,244,235,.85); pointer-events:none; }
   #drop { cursor:pointer; }
   #toast { position:fixed; left:50%; bottom:20px; transform:translate(-50%, 20px); background:var(--navy); color:#fff; padding:10px 16px; border-radius:10px;
@@ -143,28 +147,29 @@
 </head>
 <body>
 <div class="bar">
-  <span class="brand"><i></i>ZİP POZ ÇİZER</span>
-  <label class="btn ghost"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6M9 13l6 6M15 13l-6 6"/></svg>Excel aç<input type="file" id="file" accept=".xlsm,.xlsx,.xls" hidden></label>
-  <button id="pdf" disabled><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12M7 10l5 5 5-5M5 21h14"/></svg>PDF kaydet</button>
+  <span class="brand"><i></i><span data-i18n="brand">ZİP POZ ÇİZER</span></span>
+  <label class="btn ghost"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6M9 13l6 6M15 13l-6 6"/></svg><span data-i18n="open">Excel aç</span><input type="file" id="file" accept=".xlsm,.xlsx,.xls" hidden></label>
+  <button id="pdf" disabled><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12M7 10l5 5 5-5M5 21h14"/></svg><span data-i18n="pdf">PDF kaydet</span></button>
+  <div class="lang" role="group" aria-label="Dil / Language"><button type="button" data-lang="tr">TR</button><button type="button" data-lang="en">EN</button></div>
   <span class="info" id="info">Proje Excel'ini (.xlsm) sürükleyin veya açın.</span>
 </div>
 <div id="drop">
   <div class="ico"><svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 16V4M7 9l5-5 5 5M4 20h16"/></svg></div>
-  <h2>Proje Excel dosyasını buraya bırakın</h2>
-  <div>veya üstteki <b>Excel aç</b> düğmesini kullanın</div>
-  <ul><li>1PROJE → sipariş bilgileri</li><li>4POZ → imalat ölçüleri</li><li>Kapak · renk · kumaş · motor otomatik</li></ul>
+  <h2 data-i18n="dropH">Proje Excel dosyasını buraya bırakın</h2>
+  <div data-i18n="dropSub">veya üstteki <b>Excel aç</b> düğmesini kullanın</div>
+  <ul><li data-i18n="chip1">1PROJE → sipariş bilgileri</li><li data-i18n="chip2">4POZ → imalat ölçüleri</li><li data-i18n="chip3">Kapak · renk · kumaş · motor otomatik</li></ul>
 </div>
 <div id="pages"></div>
 <div id="loading" role="status" aria-live="polite">
   <div class="card">
     <div class="top"><div class="ring"><svg viewBox="0 0 48 48"><circle cx="24" cy="24" r="20"/></svg></div>
-      <div><b>Poz çizimleri hesaplanıyor</b><div class="fname"></div></div><span class="pct">0%</span></div>
+      <div><b data-i18n="loadTitle">Poz çizimleri hesaplanıyor</b><div class="fname"></div></div><span class="pct">0%</span></div>
     <div class="pbar"><b></b></div>
     <ol class="steps"></ol>
     <div class="err"></div>
   </div>
 </div>
-<div id="toast">Yazdırma penceresinde hedef olarak <b>PDF olarak kaydet</b>'i seçin.</div>
+<div id="toast" data-i18n="toast">Yazdırma penceresinde hedef olarak <b>PDF olarak kaydet</b>'i seçin.</div>
 
 <script>
 // ---------- Sabit tablolar ----------
@@ -267,10 +272,118 @@ function motorSide(dir) {
 }
 const isMotorless = p => p.manual || norm(p.motor).includes("MOTORSUZ");
 
+// ---------- Dil (TR / EN) ----------
+const I18N = {
+  tr: {
+    appTitle: "Zip Poz Çizer", brand: "ZİP POZ ÇİZER", open: "Excel aç", pdf: "PDF kaydet",
+    infoIdle: "Proje Excel'ini (.xlsm) sürükleyin veya açın.",
+    dropH: "Proje Excel dosyasını buraya bırakın", dropSub: "veya üstteki <b>Excel aç</b> düğmesini kullanın",
+    chip1: "1PROJE → sipariş bilgileri", chip2: "4POZ → imalat ölçüleri", chip3: "Kapak · renk · kumaş · motor otomatik",
+    loadTitle: "Poz çizimleri hesaplanıyor", dropping: "Bırakın — poz çizimleri hesaplansın",
+    toast: "Yazdırma penceresinde hedef olarak <b>PDF olarak kaydet</b>'i seçin.",
+    steps: ["Dosya okunuyor", "Proje bilgileri alınıyor (1PROJE)", "İmalat ölçüleri eşleştiriliyor (4POZ)",
+            "Kapak · renk · kumaş · motor çözümleniyor", "Poz çizimleri oluşturuluyor"],
+    errNo1: "1PROJE sayfası bulunamadı. Doğru proje dosyasını seçtiğinizden emin olun.",
+    errNoPoz: "1PROJE sayfasında poz bulunamadı.", errExt: "Lütfen .xlsm / .xlsx proje dosyası seçin.", err: "Hata: ",
+    pozOf: (a, b) => `${a}/${b} poz`, no4poz: "4POZ yok",
+    endCap: "YAN KAPAK", motor: "MOTOR", manual: "MANUEL", motorless: "MOTORSUZ", R: "SAĞ", L: "SOL",
+    caption: "Dıştan görünüş · ölçüler mm (imalat) · kutu ön yüzü kesitli, yan kapaklar sökülü · ölçeksiz",
+    iMotorDir: "motor yönü belirtilmemiş (sağ varsayıldı)", iMotorType: "motor tipi belirtilmemiş",
+    iColorNone: "profil rengi belirtilmemiş", iColorUnknown: c => `“${c}” rengi tanınmadı (gri gösterildi)`,
+    iNoImalat: "4POZ'da imalat ölçüsü yok (sipariş ölçüsü kullanıldı)", iSize: "ölçü eksik",
+    iCeiling: "tavan sistemi: çizim dikey sistem üzerinden temsilîdir",
+    issuesOk: "<b>Kontrol tamam</b> — tüm pozlar Excel verisinden eksiksiz çizildi.",
+    issuesHead: n => `Kontrol edilmesi gerekenler (${n})`,
+    issuesNote: "Motor yönü ve kapak tipini poz kartlarının altındaki alandan düzeltebilirsiniz. Bu kutu PDF'e basılmaz.",
+    mProduct: "Ürün", mNo: "Proje no", mDate: "Tarih", mBy: "Teklif veren", mName: "Proje ismi", mCust: "Müşteri",
+    product: "ZİP PERDE", docTitle: "POZ ÇİZİMLERİ", fileTitle: "Poz Çizimleri", project: "Proje",
+    poz: "Poz", POZ: "POZ", pcs: "ADET", footer: "Ferrini · Zipline® zip perde sistemleri", page: (n, t) => `Sayfa ${n} / ${t}`,
+    info: (no, n, a) => `${no} · ${n} poz · ${a} adet`,
+    fabricOnly: "Bu poz yalnızca <b>sabit sistem için kumaş</b> siparişidir;<br>kutu/dikme çizimi yoktur.",
+    rFabricSize: "Kumaş ölçüsü (G × Y)", rProdSize: "İmalat ölçüsü (G × Y)", rOrderSize: "Sipariş ölçüsü", rCover: "Kapak tipi",
+    rColor: "Profil rengi", rFabric: "Kumaş", rMotor: "Motor", rDrive: "Tahrik", rMotorSide: "Motor yönü", rCrankSide: "Manivela yönü",
+    rRemote: "Kumanda", rPrint: "Baskı / logo", rCustPoz: "Müşteri poz no", rNote: "Not", cover: "Kapak",
+    inDrawing: "çizimde", assumed: "varsayıldı", notSet: "Belirtilmemiş", unrecognised: "(tanınmadı)", approx: "(yaklaşık ton)",
+    manualCrank: "MANUEL (manivelalı)", orderSizeUsed: "sipariş ölçüsü", box: "kutu",
+    ceilingNote: "Tavan sistemi — çizim temsilîdir", notInExcel: "— Excel'de yok —", ctrlNote: "Düzeltmeler PDF çıktısına da yansır",
+    dirs: { "DIŞTAN BAKIŞ SAĞ": "DIŞTAN BAKIŞ SAĞ", "DIŞTAN BAKIŞ SOL": "DIŞTAN BAKIŞ SOL", "İÇTEN BAKIŞ SAĞ": "İÇTEN BAKIŞ SAĞ", "İÇTEN BAKIŞ SOL": "İÇTEN BAKIŞ SOL" },
+  },
+  en: {
+    appTitle: "Zip Position Drawer", brand: "ZIP POSITION DRAWER", open: "Open Excel", pdf: "Save PDF",
+    infoIdle: "Drag in or open the project Excel (.xlsm).",
+    dropH: "Drop the project Excel file here", dropSub: "or use the <b>Open Excel</b> button above",
+    chip1: "1PROJE → order details", chip2: "4POZ → production sizes", chip3: "Cover · colour · fabric · motor detected automatically",
+    loadTitle: "Calculating position drawings", dropping: "Drop to calculate the drawings",
+    toast: "In the print dialog, choose <b>Save as PDF</b> as the destination.",
+    steps: ["Reading file", "Reading project details (1PROJE)", "Matching production sizes (4POZ)",
+            "Resolving cover · colour · fabric · motor", "Generating position drawings"],
+    errNo1: "Sheet 1PROJE not found. Make sure you picked the right project file.",
+    errNoPoz: "No positions found on sheet 1PROJE.", errExt: "Please choose an .xlsm / .xlsx project file.", err: "Error: ",
+    pozOf: (a, b) => `${a}/${b} pos.`, no4poz: "no 4POZ",
+    endCap: "END CAP", motor: "MOTOR", manual: "MANUAL", motorless: "NO MOTOR", R: "RIGHT", L: "LEFT",
+    caption: "Outside view · dimensions in mm (production) · box front cut away, end caps removed · not to scale",
+    iMotorDir: "motor side not specified (right assumed)", iMotorType: "motor type not specified",
+    iColorNone: "profile colour not specified", iColorUnknown: c => `colour “${c}” not recognised (shown grey)`,
+    iNoImalat: "no production size in 4POZ (order size used)", iSize: "size missing",
+    iCeiling: "ceiling system: drawing shown as a vertical system (indicative)",
+    issuesOk: "<b>All checks passed</b> — every position was drawn from complete Excel data.",
+    issuesHead: n => `Items to check (${n})`,
+    issuesNote: "You can correct the motor side and cover type below each position card. This box is not printed.",
+    mProduct: "Product", mNo: "Project no", mDate: "Date", mBy: "Prepared by", mName: "Project name", mCust: "Customer",
+    product: "ZIP SCREEN", docTitle: "POSITION DRAWINGS", fileTitle: "Position Drawings", project: "Project",
+    poz: "Pos.", POZ: "POS", pcs: "PCS", footer: "Ferrini · Zipline® zip screen systems", page: (n, t) => `Page ${n} / ${t}`,
+    info: (no, n, a) => `${no} · ${n} positions · ${a} pcs`,
+    fabricOnly: "This position is a <b>fabric-only order for a fixed system</b>;<br>there is no box/rail drawing.",
+    rFabricSize: "Fabric size (W × H)", rProdSize: "Production size (W × H)", rOrderSize: "Order size", rCover: "Cover type",
+    rColor: "Profile colour", rFabric: "Fabric", rMotor: "Motor", rDrive: "Drive", rMotorSide: "Motor side", rCrankSide: "Crank side",
+    rRemote: "Remote control", rPrint: "Print / logo", rCustPoz: "Customer pos. no", rNote: "Note", cover: "Cover",
+    inDrawing: "in drawing", assumed: "assumed", notSet: "Not specified", unrecognised: "(not recognised)", approx: "(approx. shade)",
+    manualCrank: "MANUAL (crank)", orderSizeUsed: "order size", box: "box",
+    ceilingNote: "Ceiling system — drawing is indicative", notInExcel: "— not in Excel —", ctrlNote: "Corrections also apply to the PDF",
+    dirs: { "DIŞTAN BAKIŞ SAĞ": "OUTSIDE VIEW RIGHT", "DIŞTAN BAKIŞ SOL": "OUTSIDE VIEW LEFT", "İÇTEN BAKIŞ SAĞ": "INSIDE VIEW RIGHT", "İÇTEN BAKIŞ SOL": "INSIDE VIEW LEFT" },
+  },
+};
+let LANG = "tr";
+try { if (localStorage.getItem("pozcizer.lang") === "en") LANG = "en"; } catch (e) {}
+const T = () => I18N[LANG];
+// Excel'den gelen Türkçe değerlerin İngilizce karşılıkları (yalnızca EN'de; ürün kodları olduğu gibi kalır)
+const VAL_EN = [
+  [/DIŞTAN BAKIŞ/g, "OUTSIDE VIEW"], [/İÇTEN BAKIŞ/g, "INSIDE VIEW"], [/\bSAĞ\b/g, "RIGHT"], [/\bSOL\b/g, "LEFT"],
+  [/\(Dikey\)/gi, "(Vertical)"], [/\(Tavan\)/gi, "(Ceiling)"], [/_MNL\b/g, " (Manual)"], [/SABİT İÇİN KUMAŞ/g, "FABRIC FOR FIXED SYSTEM"],
+  [/\(Bitmiş\)/gi, "(Finished)"],
+  [/MOTORSUZ/g, "NO MOTOR"], [/ALICILI/g, "WITH RECEIVER"], [/KISA MOTOR/g, "SHORT MOTOR"], [/\bALICI\b/g, "RECEIVER"], [/\bDÜZ\b/g, "WIRED"],
+  [/ÖZEL/g, "SPECIAL"], [/(\d+)\s*ADET/g, "$1 PCS"], [/\bADET\b/g, "PCS"], [/(\d+)\s*KANALLI/g, "$1-CHANNEL"], [/RÜZGAR SENSÖRÜ/g, "WIND SENSOR"],
+  [/\bBUTON\b/g, "BUTTON"], [/BASKI VAR/g, "PRINT: YES"], [/^VAR$/g, "YES"], [/^YOK$/g, "NO"],
+  [/AHŞAP KAPLAMA/g, "WOOD FINISH"], [/İPEK/g, "SILK"], [/\bMAT\b/g, "MATT"], [/\bTEX\b/g, "TEXTURED"],
+  [/ALTINMEŞE/g, "GOLDEN OAK"], [/FINDIK/g, "HAZELNUT"], [/CEVİZ/g, "WALNUT"], [/ŞEFFAF/g, "TRANSPARENT"], [/OPAK/g, "OPAQUE"],
+  [/BLACOUT/g, "BLACKOUT"], [/ANTRASİT/g, "ANTHRACITE"], [/KENARLARDAKİPERDERENGİ/g, "EDGE FABRIC COLOUR"],
+];
+const OLCU_EN = [[/\+1 D\b/g, "+1 Rail"], [/\+K\b/g, "+Box"], [/-K\b/g, "-Box"], [/\+D\b/g, "+Rails"]];
+// Ekranda gösterilecek değer (EN'de çevrilir, kaçışlı döner)
+const dv = (v, extra) => {
+  let s = String(v ?? "");
+  if (LANG === "en") for (const [re, to] of (extra || VAL_EN)) s = s.replace(re, to);
+  return esc(s);
+};
+function applyStatic() {
+  const t = T();
+  document.documentElement.lang = LANG;
+  document.querySelectorAll("[data-i18n]").forEach(el => { el.innerHTML = t[el.dataset.i18n]; });
+  document.body.dataset.drop = t.dropping;
+  document.querySelectorAll(".lang button").forEach(b => b.classList.toggle("on", b.dataset.lang === LANG));
+  if (!DATA) { document.title = t.appTitle; document.getElementById("info").textContent = t.infoIdle; }
+}
+function setLang(l) {
+  LANG = l;
+  try { localStorage.setItem("pozcizer.lang", l); } catch (e) {}
+  applyStatic();
+  if (DATA) render();
+}
+
 // ---------- Excel okuma ----------
 function readWorkbook(wb) {
   const sh = wb.Sheets["1PROJE"], pz = wb.Sheets["4POZ"];
-  if (!sh) throw new Error("1PROJE sayfası bulunamadı. Doğru proje dosyasını seçtiğinizden emin olun.");
+  if (!sh) throw new Error(T().errNo1);
   const c = (s, a) => s && s[a] ? s[a].v : undefined;
   const fmtDate = v => v instanceof Date ? v.toLocaleDateString("tr-TR") : val(v);
   const head = { tarih: fmtDate(c(sh,"B3")), il: val(c(sh,"C3")), veren: val(c(sh,"D3")), firma: val(c(sh,"E3")),
@@ -640,7 +753,7 @@ function drawPoz(p, i) {
   for (const x of [-capGap - tc / 2, fw + capGap + tc / 2]) {
     const q = [P(x, 0, Dp / 2)[0], P(x, 0, Dp)[1] - 7];
     ext(q[0] - 26, q[1] - 10);
-    out.push(`<text x="${q[0]}" y="${q[1]}" font-size="9" fill="#3d3a35" text-anchor="middle" letter-spacing=".04em" font-weight="600">YAN KAPAK</text>`);
+    out.push(`<text x="${q[0]}" y="${q[1]}" font-size="9" fill="#3d3a35" text-anchor="middle" letter-spacing=".04em" font-weight="600">${T().endCap}</text>`);
   }
 
   // kablo
@@ -657,8 +770,8 @@ function drawPoz(p, i) {
     ext(lx - 66, ly - 16); ext(lx + 66, ly);
     out.push(`<path d="M${motorAnchor[0]} ${motorAnchor[1]}L${motorAnchor[0]} ${ly + 8}" stroke="${ACC}" stroke-width="1.6"/>
       <circle cx="${motorAnchor[0]}" cy="${motorAnchor[1]}" r="3.2" fill="${ACC}" stroke="#fff" stroke-width="1"/>
-      <rect x="${lx - 64}" y="${ly - 14}" width="128" height="22" rx="11" fill="${ACC}"/>
-      <text x="${lx}" y="${ly + 1.5}" text-anchor="middle" font-size="12.5" font-weight="700" fill="#fff" letter-spacing=".04em">MOTOR — ${side === "R" ? "SAĞ" : "SOL"}</text>`);
+      <rect x="${lx - 66}" y="${ly - 14}" width="132" height="22" rx="11" fill="${ACC}"/>
+      <text x="${lx}" y="${ly + 1.5}" text-anchor="middle" font-size="12.5" font-weight="700" fill="#fff" letter-spacing=".04em">${T().motor} — ${T()[side]}</text>`);
   } else if (p.manual) {
     // manuel: kutu ucundan sarkan manivela
     const xs = side === "R" ? fw - rw - 10 * e : rw + 10 * e;
@@ -671,10 +784,10 @@ function drawPoz(p, i) {
     ext(lx - 66, ly - 16);
     out.push(`<path d="M${eye[0]} ${eye[1]}L${eye[0]} ${ly + 8}" stroke="#5c6166" stroke-width="1.2" stroke-dasharray="3 2"/>
       <rect x="${lx - 66}" y="${ly - 14}" width="132" height="22" rx="11" fill="#5c6166"/>
-      <text x="${lx}" y="${ly + 1.5}" text-anchor="middle" font-size="12" font-weight="700" fill="#fff" letter-spacing=".04em">MANUEL — ${side === "R" ? "SAĞ" : "SOL"}</text>`);
+      <text x="${lx}" y="${ly + 1.5}" text-anchor="middle" font-size="12" font-weight="700" fill="#fff" letter-spacing=".04em">${T().manual} — ${T()[side]}</text>`);
   } else {
     const c = P(fw / 2, -22, Dp);
-    out.push(`<text x="${c[0]}" y="${c[1]}" text-anchor="middle" font-size="12" font-weight="700" fill="#c0392b">MOTORSUZ</text>`);
+    out.push(`<text x="${c[0]}" y="${c[1]}" text-anchor="middle" font-size="12" font-weight="700" fill="#c0392b">${T().motorless}</text>`);
   }
 
   // ---------- ölçüler ----------
@@ -728,7 +841,7 @@ function drawPoz(p, i) {
   S.push(`<line x1="${sx0}" y1="${yW}" x2="${sx1}" y2="${yW}" stroke="#b8a68c" stroke-width="1"/>`);
   // kenarlarda sayfaya yumuşak geçiş
   S.push(`<rect x="${sx0}" y="${sy0}" width="${vb[2]}" height="${sy1 - sy0}" fill="url(#${id}vig)"/></g>`);
-  out.push(`<text x="${bb[0]}" y="${bb[3] + 18}" font-size="9.5" fill="#777">Dıştan görünüş · ölçüler mm (imalat) · kutu ön yüzü kesitli, yan kapaklar sökülü · ölçeksiz</text>`);
+  out.push(`<text x="${bb[0]}" y="${bb[3] + 18}" font-size="9.5" fill="#777">${T().caption}</text>`);
   return `<svg viewBox="${vb.map(v => v.toFixed(0)).join(" ")}" xmlns="http://www.w3.org/2000/svg" font-family="Segoe UI, Arial"><defs>${defs.join("")}</defs>${S.join("")}${out.join("")}</svg>`;
 }
 function capIcon(kind, fill, box) {
@@ -746,33 +859,35 @@ const frame = () => new Promise(r => requestAnimationFrame(() => r()));
 // Excel'den gelen ama çizimde tahmin edilen / eksik kalan noktalar
 function pozIssues(p) {
   if (p.fabricOnly) return [];
-  const out = [], pc = profileColor(p.renk);
-  if (!isMotorless(p) && !motorSide(p.motorYon)) out.push("motor yönü belirtilmemiş (sağ varsayıldı)");
-  if (!isMotorless(p) && !p.motor) out.push("motor tipi belirtilmemiş");
-  if (!p.renk) out.push("profil rengi belirtilmemiş");
-  else if (pc.unknown) out.push(`“${p.renk}” rengi tanınmadı (gri gösterildi)`);
-  if (p.imalatYok && (p.iw || p.ih)) out.push("4POZ'da imalat ölçüsü yok (sipariş ölçüsü kullanıldı)");
-  if (!p.iw || !p.ih) out.push("ölçü eksik");
-  if (p.ceiling) out.push("tavan sistemi: çizim dikey sistem üzerinden temsilîdir");
+  const t = T(), out = [], pc = profileColor(p.renk);
+  if (!isMotorless(p) && !motorSide(p.motorYon)) out.push(t.iMotorDir);
+  if (!isMotorless(p) && !p.motor) out.push(t.iMotorType);
+  if (!p.renk) out.push(t.iColorNone);
+  else if (pc.unknown) out.push(t.iColorUnknown(p.renk));
+  if (p.imalatYok && (p.iw || p.ih)) out.push(t.iNoImalat);
+  if (!p.iw || !p.ih) out.push(t.iSize);
+  if (p.ceiling) out.push(t.iCeiling);
   return out;
 }
 function pageHead(head) {
-  const meta = [["Ürün", "ZİP PERDE"], ["Proje no", head.no], ["Tarih", head.tarih], ["Teklif veren", head.veren], ["Proje ismi", head.proje], ["Müşteri", head.firma]];
+  const t = T();
+  const meta = [[t.mProduct, t.product], [t.mNo, head.no], [t.mDate, head.tarih], [t.mBy, head.veren], [t.mName, head.proje], [t.mCust, head.firma]];
   return `<div class="head"><div class="logo-z"><img src="assets/logo-zipline.png" alt="Zipline"></div>
-      <div class="t"><b>POZ ÇİZİMLERİ</b><span>${esc(head.no)}${head.tarih ? " · " + esc(head.tarih) : ""}</span></div>
+      <div class="t"><b>${t.docTitle}</b><span>${esc(head.no)}${head.tarih ? " · " + esc(head.tarih) : ""}</span></div>
       <div class="logo-f"><img src="assets/logo-ferrini.png" alt="Ferrini"></div></div>
     <div class="meta">${meta.map(([k, v]) => `<div><div class="k">${k}</div><div class="v" title="${esc(v)}">${esc(v) || "—"}</div></div>`).join("")}</div>`;
 }
 function issuesBox(pozlar) {
+  const t = T();
   const list = pozlar.map(p => [p, pozIssues(p)]).filter(([, l]) => l.length);
-  if (!list.length) return `<div class="issues ok"><b>Kontrol tamam</b> — tüm pozlar Excel verisinden eksiksiz çizildi.</div>`;
-  return `<div class="issues"><b>Kontrol edilmesi gerekenler (${list.reduce((s, [, l]) => s + l.length, 0)})</b>
-    <ul>${list.map(([p, l]) => `<li><span>Poz ${esc(p.no)}</span> ${l.map(esc).join(" · ")}</li>`).join("")}</ul>
-    <small>Motor yönü ve kapak tipini poz kartlarının altındaki alandan düzeltebilirsiniz. Bu kutu PDF'e basılmaz.</small></div>`;
+  if (!list.length) return `<div class="issues ok">${t.issuesOk}</div>`;
+  return `<div class="issues"><b>${t.issuesHead(list.reduce((s, [, l]) => s + l.length, 0))}</b>
+    <ul>${list.map(([p, l]) => `<li><span>${t.poz} ${esc(p.no)}</span> ${l.map(esc).join(" · ")}</li>`).join("")}</ul>
+    <small>${t.issuesNote}</small></div>`;
 }
 // Tüm sayfaları üretir; onPoz verilirse her pozdan sonra ilerleme bildirilir (yükleme ekranı için)
 async function build(onPoz) {
-  const { head, pozlar } = DATA;
+  const { head, pozlar } = DATA, t = T();
   const frag = document.createDocumentFragment();
   const total = Math.ceil(pozlar.length / PER_PAGE);
   const wrap = document.createElement("div");
@@ -788,7 +903,7 @@ async function build(onPoz) {
     }
     const foot = document.createElement("div");
     foot.className = "foot";
-    foot.innerHTML = `<span>Ferrini · Zipline® zip perde sistemleri</span><span>Sayfa ${pg / PER_PAGE + 1} / ${total}</span>`;
+    foot.innerHTML = `<span>${t.footer}</span><span>${t.page(pg / PER_PAGE + 1, total)}</span>`;
     page.appendChild(foot);
     frag.appendChild(page);
   }
@@ -797,57 +912,58 @@ async function build(onPoz) {
   pages.appendChild(frag);
   document.getElementById("pdf").disabled = false;
   const adet = pozlar.reduce((s, p) => s + (+p.adet || 1), 0);
-  document.getElementById("info").textContent = `${head.no || "Proje"} · ${pozlar.length} poz · ${adet} adet`;
-  document.title = `${head.no || "Proje"} Poz Çizimleri`;
+  document.getElementById("info").textContent = t.info(head.no || t.project, pozlar.length, adet);
+  document.title = `${head.no || t.project} ${t.fileTitle}`;
 }
-// Kart içi düzeltmelerde yeniden çiz; kaydırma konumunu koru
+// Kart içi düzeltmelerde / dil değişiminde yeniden çiz; kaydırma konumunu koru
 function render() { const y = scrollY; build().then(() => scrollTo(0, y)); }
 
 function pozCard(p, i) {
+  const t = T();
   const el = document.createElement("div");
   el.className = "poz";
   const row = (k, v) => v ? `<div><div class="k">${k}</div><div class="v">${v}</div></div>` : "";
-  const headHtml = `<div class="poz-h"><span class="no">POZ ${esc(p.no)}</span><span class="sys">${esc(p.sys)}</span><span class="adet">${esc(p.adet)} ADET</span></div>`;
+  const headHtml = `<div class="poz-h"><span class="no">${t.POZ} ${esc(p.no)}</span><span class="sys">${dv(p.sys)}</span><span class="adet">${esc(p.adet)} ${t.pcs}</span></div>`;
+  const fabricRow = fc => row(t.rFabric, `<span class="sw" style="background:${fc}"></span>${p.kumas ? dv(p.kumas) : `<span class="warn">${t.notSet}</span>`}${p.kumasRenk ? ` <small>· ${dv(p.kumasRenk)}</small>` : ""}`);
   if (p.fabricOnly) {
     const fc = fabricColor(p.kumas, p.kumasRenk);
-    el.innerHTML = `${headHtml}<div class="poz-b"><div class="nodraw"><div>Bu poz yalnızca <b>sabit sistem için kumaş</b> siparişidir;<br>kutu/dikme çizimi yoktur.</div></div>
-      <div class="spec">${row("Kumaş ölçüsü (G × Y)", `<span class="big">${esc(p.iw)} × ${esc(p.ih)}</span> <small>mm</small>`)}
-        ${row("Kumaş", `<span class="sw" style="background:${fc}"></span>${esc(p.kumas)}${p.kumasRenk ? ` <small>· ${esc(p.kumasRenk)}</small>` : ""}`)}
-        ${row("Baskı / logo", esc(p.baski))}${row("Müşteri poz no", esc(p.musPoz))}</div></div>`;
+    el.innerHTML = `${headHtml}<div class="poz-b"><div class="nodraw"><div>${t.fabricOnly}</div></div>
+      <div class="spec">${row(t.rFabricSize, `<span class="big">${esc(p.iw)} × ${esc(p.ih)}</span> <small>mm</small>`)}
+        ${fabricRow(fc)}${row(t.rPrint, dv(p.baski))}${row(t.rCustPoz, esc(p.musPoz))}</div></div>`;
     return el;
   }
   const pc = profileColor(p.renk), fc = fabricColor(p.kumas, p.kumasRenk);
   const side = motorSide(p.motorYon) || p.forceSide || "R";
   const motorless = isMotorless(p);
-  const sideTag = `<span class="motor">${side === "R" ? "SAĞ" : "SOL"}</span>`;
-  const yonTxt = p.motorYon ? `${esc(p.motorYon)}<br><small>çizimde ${sideTag}</small>`
-                            : `<span class="warn">Belirtilmemiş</span><br><small>çizimde ${sideTag} varsayıldı</small>`;
+  const sideTag = `<span class="motor">${t[side]}</span>`;
+  const yonTxt = p.motorYon ? `${dv(p.motorYon)}<br><small>${t.inDrawing} ${sideTag}</small>`
+                            : `<span class="warn">${t.notSet}</span><br><small>${t.inDrawing} ${sideTag} ${t.assumed}</small>`;
   const kum = p.imKumanda || (p.kumanda ? `${p.kumandaAdet || 1} ADET ${p.kumanda}` : "");
   const swatch = pc.wood ? `background:linear-gradient(100deg, ${pc.wood[0]} 0 40%, ${pc.wood[1]} 45%, ${pc.wood[0]} 55%)` : `background:${pc.hex}`;
-  const renkTxt = !p.renk ? '<span class="warn">Belirtilmemiş</span>'
-    : esc(p.renk) + (pc.unknown ? ' <small class="warn">(tanınmadı)</small>' : pc.approx ? " <small>(yaklaşık ton)</small>" : "");
-  const motorTxt = p.manual ? "MANUEL (manivelalı)" : p.motor ? esc(p.motor) : '<span class="warn">Belirtilmemiş</span>';
+  const renkTxt = !p.renk ? `<span class="warn">${t.notSet}</span>`
+    : dv(p.renk) + (pc.unknown ? ` <small class="warn">${t.unrecognised}</small>` : pc.approx ? ` <small>${t.approx}</small>` : "");
+  const motorTxt = p.manual ? t.manualCrank : p.motor ? dv(p.motor) : `<span class="warn">${t.notSet}</span>`;
   el.innerHTML = `${headHtml}
     <div class="poz-b">${drawPoz(p, i)}
       <div class="spec">
-        ${row("İmalat ölçüsü (G × Y)", `<span class="big">${esc(p.iw) || "?"} × ${esc(p.ih) || "?"}</span> <small>mm${p.imalatYok ? " · sipariş ölçüsü" : ""}</small>`)}
-        ${row("Sipariş ölçüsü", `${esc(p.w)} × ${esc(p.h)} <small>${esc(p.olcu)}</small>`)}
-        ${row("Kapak tipi", `${capIcon(p.kapak, pc.hex, p.box)} ${KAPAK[p.kapak]}${p.box && p.box !== 110 && p.kapak !== "sharp130" ? ` <small>· ${p.box} kutu</small>` : ""}`)}
-        ${row("Profil rengi", `<span class="sw" style="${swatch}"></span>${renkTxt}${p.boya ? ` <small>· ${esc(p.boya)}</small>` : ""}`)}
-        ${row("Kumaş", `<span class="sw" style="background:${fc}"></span>${esc(p.kumas) || '<span class="warn">Belirtilmemiş</span>'}${p.kumasRenk ? ` <small>· ${esc(p.kumasRenk)}</small>` : ""}`)}
-        ${row(p.manual ? "Tahrik" : "Motor", motorTxt)}
-        ${!motorless || p.manual ? row(p.manual ? "Manivela yönü" : "Motor yönü", yonTxt) : ""}
-        ${row("Kumanda", esc(kum))}
-        ${row("Baskı / logo", esc(p.baski))}
-        ${row("Müşteri poz no", esc(p.musPoz))}
-        ${p.ceiling ? row("Not", '<span class="warn">Tavan sistemi — çizim temsilîdir</span>') : ""}
+        ${row(t.rProdSize, `<span class="big">${esc(p.iw) || "?"} × ${esc(p.ih) || "?"}</span> <small>mm${p.imalatYok ? " · " + t.orderSizeUsed : ""}</small>`)}
+        ${row(t.rOrderSize, `${esc(p.w)} × ${esc(p.h)} <small>${dv(p.olcu, VAL_EN.concat(OLCU_EN))}</small>`)}
+        ${row(t.rCover, `${capIcon(p.kapak, pc.hex, p.box)} ${KAPAK[p.kapak]}${p.box && p.box !== 110 && p.kapak !== "sharp130" ? ` <small>· ${p.box} ${t.box}</small>` : ""}`)}
+        ${row(t.rColor, `<span class="sw" style="${swatch}"></span>${renkTxt}${p.boya ? ` <small>· ${dv(p.boya)}</small>` : ""}`)}
+        ${fabricRow(fc)}
+        ${row(p.manual ? t.rDrive : t.rMotor, motorTxt)}
+        ${!motorless || p.manual ? row(p.manual ? t.rCrankSide : t.rMotorSide, yonTxt) : ""}
+        ${row(t.rRemote, dv(kum))}
+        ${row(t.rPrint, dv(p.baski))}
+        ${row(t.rCustPoz, esc(p.musPoz))}
+        ${p.ceiling ? row(t.rNote, `<span class="warn">${t.ceilingNote}</span>`) : ""}
       </div>
     </div>
     <div class="ctrl">
-      <label class="f"><span>${p.manual ? "Manivela" : "Motor"} yönü</span>
-        <select data-k="motorYon">${["", ...MOTOR_DIRS].map(d => `<option ${d === p.motorYon ? "selected" : ""} value="${d}">${d || "— Excel'de yok —"}</option>`).join("")}</select></label>
-      <div class="f"><span>Kapak</span><div class="seg">${Object.entries(KAPAK).map(([k, v]) => `<button type="button" data-kapak="${k}" class="${k === p.kapak ? "on" : ""}">${v}</button>`).join("")}</div></div>
-      <span class="note">Düzeltmeler PDF çıktısına da yansır</span></div>`;
+      <label class="f"><span>${p.manual ? t.rCrankSide : t.rMotorSide}</span>
+        <select data-k="motorYon">${["", ...MOTOR_DIRS].map(d => `<option ${d === p.motorYon ? "selected" : ""} value="${d}">${d ? t.dirs[d] : t.notInExcel}</option>`).join("")}</select></label>
+      <div class="f"><span>${t.cover}</span><div class="seg">${Object.entries(KAPAK).map(([k, v]) => `<button type="button" data-kapak="${k}" class="${k === p.kapak ? "on" : ""}">${v}</button>`).join("")}</div></div>
+      <span class="note">${t.ctrlNote}</span></div>`;
   el.querySelectorAll("select").forEach(s => s.onchange = () => { p[s.dataset.k] = s.value; render(); });
   el.querySelectorAll("[data-kapak]").forEach(b => b.onclick = () => {
     p.kapak = b.dataset.kapak;
@@ -858,12 +974,10 @@ function pozCard(p, i) {
 }
 
 // ---------- Dosya + "hesaplanıyor" ekranı ----------
-const STEPS = ["Dosya okunuyor", "Proje bilgileri alınıyor (1PROJE)", "İmalat ölçüleri eşleştiriliyor (4POZ)",
-               "Kapak · renk · kumaş · motor çözümleniyor", "Poz çizimleri oluşturuluyor"];
 const ov = document.getElementById("loading");
 function showLoading(name) {
   ov.querySelector(".fname").textContent = name;
-  ov.querySelector(".steps").innerHTML = STEPS.map(s => `<li><i></i><span>${s}</span><em></em></li>`).join("");
+  ov.querySelector(".steps").innerHTML = T().steps.map(s => `<li><i></i><span>${s}</span><em></em></li>`).join("");
   ov.querySelector(".err").textContent = "";
   setProgress(0);
   ov.classList.add("on");
@@ -871,12 +985,13 @@ function showLoading(name) {
 function setProgress(f) { ov.querySelector(".pbar b").style.width = (f * 100).toFixed(1) + "%"; ov.querySelector(".pct").textContent = Math.round(f * 100) + "%"; }
 function step(k, note) {
   ov.querySelectorAll(".steps li").forEach((li, j) => { li.className = j < k ? "done" : j === k ? "run" : ""; });
-  if (note !== undefined) ov.querySelectorAll(".steps em")[Math.min(k, STEPS.length) - 1].textContent = note;
+  if (note !== undefined) ov.querySelectorAll(".steps em")[Math.min(k, T().steps.length) - 1].textContent = note;
 }
 let busy = false;
 async function load(file) {
   if (busy || !file) return;
-  if (!/\.(xlsm|xlsx|xls)$/i.test(file.name)) { document.getElementById("info").textContent = "Lütfen .xlsm / .xlsx proje dosyası seçin."; return; }
+  const t = T();
+  if (!/\.(xlsm|xlsx|xls)$/i.test(file.name)) { document.getElementById("info").textContent = t.errExt; return; }
   busy = true;
   showLoading(file.name);
   try {
@@ -886,10 +1001,10 @@ async function load(file) {
     const wb = XLSX.read(buf, { type: "array", cellDates: true, sheets: ["1PROJE", "4POZ"], cellFormula: false, cellHTML: false, cellText: false, cellStyles: false, bookVBA: false });
     step(1, `${(file.size / 1048576).toFixed(1)} MB`); setProgress(.18); await sleep(260);
     DATA = readWorkbook(wb);
-    if (!DATA.pozlar.length) throw new Error("1PROJE sayfasında poz bulunamadı.");
+    if (!DATA.pozlar.length) throw new Error(t.errNoPoz);
     step(2, DATA.head.no ? String(DATA.head.no) : ""); setProgress(.32); await sleep(260);
     const imOk = DATA.pozlar.filter(p => !p.imalatYok).length;
-    step(3, DATA.has4poz ? `${imOk}/${DATA.pozlar.length} poz` : "4POZ yok"); setProgress(.46); await sleep(260);
+    step(3, DATA.has4poz ? t.pozOf(imOk, DATA.pozlar.length) : t.no4poz); setProgress(.46); await sleep(260);
     const kinds = new Set(DATA.pozlar.map(p => KAPAK[p.kapak]));
     step(4, [...kinds].join(", ")); setProgress(.55); await frame();
     await build(async (k, n) => {
@@ -904,19 +1019,20 @@ async function load(file) {
     scrollTo(0, 0);
   } catch (err) {
     console.error(err);
-    ov.querySelector(".err").textContent = "Hata: " + err.message;
+    ov.querySelector(".err").textContent = t.err + err.message;
     ov.querySelectorAll(".steps li.run").forEach(li => li.className = "fail");
-    document.getElementById("info").textContent = "Hata: " + err.message;
+    document.getElementById("info").textContent = t.err + err.message;
     setTimeout(() => ov.classList.remove("on"), 2600);
   } finally { busy = false; }
 }
 const fileIn = document.getElementById("file");
 fileIn.onchange = e => { const f = e.target.files[0]; e.target.value = ""; load(f); };   // aynı dosya tekrar seçilebilsin
 document.getElementById("pdf").onclick = () => {
-  const t = document.getElementById("toast");
-  t.classList.add("on"); setTimeout(() => t.classList.remove("on"), 5000);
+  const el = document.getElementById("toast");
+  el.classList.add("on"); setTimeout(() => el.classList.remove("on"), 5000);
   setTimeout(() => window.print(), 60);
 };
+document.querySelectorAll(".lang button").forEach(b => b.onclick = () => setLang(b.dataset.lang));
 const drop = document.getElementById("drop");
 let dragDepth = 0;
 document.addEventListener("dragenter", e => { e.preventDefault(); dragDepth++; document.body.classList.add("dragging"); drop.classList.add("over"); });
@@ -927,6 +1043,7 @@ document.addEventListener("drop", e => {
   load(e.dataTransfer.files[0]);
 });
 drop.onclick = () => fileIn.click();
+applyStatic();
 </script>
 </body>
 </html>
