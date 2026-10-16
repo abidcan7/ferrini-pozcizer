@@ -5,45 +5,88 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Zip Poz Çizer</title>
 <script src="lib/xlsx.full.min.js"></script>
+<script src="assets/profiller.js"></script>
 <style>
-  :root { --ink:#1d1f21; --muted:#6b7076; --line:#c9ccd0; --accent:#e0761c; --bg:#eef0f2; }
+  :root { --ink:#1f2a33; --muted:#6b7680; --line:#e1e5e8; --soft:#f4f6f5; --accent:#2e8b47; --accent-d:#1d5e30;
+          --accent-l:#e8f4eb; --navy:#16232f; --bg:#e9ecee; }
   * { box-sizing:border-box; }
-  body { margin:0; font-family:"Segoe UI", Arial, sans-serif; color:var(--ink); background:var(--bg); }
-  .bar { position:sticky; top:0; z-index:5; display:flex; gap:12px; align-items:center; padding:10px 16px;
-         background:#1d1f21; color:#fff; flex-wrap:wrap; }
-  .bar b { letter-spacing:.08em; }
-  .bar button, .bar label.btn { background:var(--accent); color:#fff; border:0; padding:8px 14px; border-radius:4px;
-         font:inherit; font-weight:600; cursor:pointer; }
-  .bar label.btn.ghost { background:#3a3d41; }
-  .bar .info { color:#aab; font-size:13px; }
-  #drop { margin:40px auto; max-width:640px; border:2px dashed #9aa0a6; border-radius:10px; padding:60px 20px;
-          text-align:center; color:var(--muted); background:#fff; }
-  #drop.over { border-color:var(--accent); color:var(--accent); }
-  #pages { display:flex; flex-direction:column; align-items:center; gap:16px; padding:16px; }
-  .page { width:210mm; min-height:297mm; background:#fff; padding:10mm; box-shadow:0 2px 10px rgba(0,0,0,.12);
-          display:flex; flex-direction:column; gap:5mm; }
-  .head { display:grid; grid-template-columns:1fr 1.4fr 1fr; border:1px solid var(--ink); }
-  .head > div { padding:6px 10px; display:flex; align-items:center; justify-content:center; }
-  .head .t { font-size:18px; font-weight:700; border-left:1px solid var(--ink); border-right:1px solid var(--ink); }
-  .logo-f { font-size:24px; letter-spacing:.32em; font-weight:300; }
-  .logo-z { font-size:20px; font-weight:800; font-style:italic; color:#1b5fa8; }
-  .meta { display:grid; grid-template-columns:repeat(6,1fr); border:1px solid var(--ink); border-top:0; font-size:11px; text-align:center; }
-  .meta div { padding:3px; border-right:1px solid var(--line); }
-  .meta div:nth-child(-n+6) { font-weight:700; background:#f2f3f4; border-bottom:1px solid var(--line); }
-  .poz { border:1px solid var(--ink); display:flex; flex-direction:column; flex:1; min-height:0; }
-  .poz-h { display:flex; align-items:center; background:#1d1f21; color:#fff; font-weight:700; }
-  .poz-h .no { padding:4px 10px; font-size:20px; background:var(--accent); }
-  .poz-h .sys { padding:4px 12px; flex:1; }
-  .poz-h .adet { padding:4px 12px; font-size:16px; }
-  .poz-b { display:grid; grid-template-columns:1fr 58mm; flex:1; }
-  .poz-b > svg { width:100%; height:100%; max-height:112mm; display:block; padding:4mm; }
-  .spec { border-left:1px solid var(--line); font-size:11px; padding:6px 8px; display:flex; flex-direction:column; gap:5px; }
-  .spec .k { color:var(--muted); font-size:9.5px; font-weight:700; letter-spacing:.04em; text-transform:uppercase; }
-  .spec .v { font-weight:600; }
-  .sw { display:inline-block; width:12px; height:12px; border:1px solid #888; vertical-align:-2px; margin-right:5px; }
+  body { margin:0; font-family:"Segoe UI", "Inter", Arial, sans-serif; color:var(--ink); background:var(--bg); }
+
+  /* araç çubuğu */
+  .bar { position:sticky; top:0; z-index:5; display:flex; gap:10px; align-items:center; padding:10px 20px;
+         background:rgba(22,35,47,.96); backdrop-filter:blur(6px); color:#fff; flex-wrap:wrap; box-shadow:0 2px 12px rgba(0,0,0,.18); }
+  .bar .brand { display:flex; align-items:center; gap:10px; font-weight:700; letter-spacing:.06em; margin-right:8px; }
+  .bar .brand i { width:10px; height:22px; border-radius:3px; background:var(--accent); display:inline-block; }
+  .bar button, .bar label.btn { display:inline-flex; align-items:center; gap:7px; background:var(--accent); color:#fff; border:0;
+         padding:8px 16px; border-radius:8px; font:inherit; font-size:14px; font-weight:600; cursor:pointer; transition:background .15s, transform .15s; }
+  .bar button:hover:not(:disabled), .bar label.btn:hover { background:#36a053; }
+  .bar button:disabled { opacity:.45; cursor:default; }
+  .bar label.btn.ghost { background:rgba(255,255,255,.1); border:1px solid rgba(255,255,255,.18); }
+  .bar label.btn.ghost:hover { background:rgba(255,255,255,.18); }
+  .bar svg { width:16px; height:16px; }
+  .bar .info { color:#b7c2cc; font-size:13px; margin-left:auto; }
+
+  /* yükleme alanı */
+  #drop { margin:56px auto; max-width:620px; border:2px dashed #b9c2c9; border-radius:16px; padding:52px 28px;
+          text-align:center; color:var(--muted); background:#fff; box-shadow:0 6px 24px rgba(22,35,47,.06); transition:all .15s; }
+  #drop.over { border-color:var(--accent); background:var(--accent-l); color:var(--accent-d); }
+  #drop .ico { width:64px; height:64px; margin:0 auto 14px; border-radius:16px; background:var(--accent-l); display:grid; place-items:center; color:var(--accent); }
+  #drop h2 { margin:0 0 6px; font-size:20px; color:var(--ink); }
+  #drop ul { list-style:none; padding:0; margin:18px 0 0; display:flex; gap:8px; justify-content:center; flex-wrap:wrap; font-size:12px; }
+  #drop li { background:var(--soft); border:1px solid var(--line); border-radius:999px; padding:4px 10px; }
+
+  /* sayfa */
+  #pages { display:flex; flex-direction:column; align-items:center; gap:18px; padding:20px 16px 40px; }
+  .page { width:210mm; min-height:297mm; background:#fff; padding:9mm 10mm 8mm; box-shadow:0 4px 18px rgba(22,35,47,.14);
+          display:flex; flex-direction:column; gap:4mm; }
+  .head { display:grid; grid-template-columns:1fr auto 1fr; align-items:center; padding-bottom:3mm; border-bottom:2px solid var(--navy); position:relative; }
+  .head::after { content:""; position:absolute; left:0; bottom:-2px; width:28mm; height:2px; background:var(--accent); }
+  .head .t { text-align:center; }
+  .head .t b { display:block; font-size:19px; letter-spacing:.14em; color:var(--navy); }
+  .head .t span { font-size:10.5px; color:var(--muted); letter-spacing:.08em; }
+  .head img { display:block; max-width:100%; }
+  .logo-z img { height:40px; }
+  .logo-f { justify-self:end; } .logo-f img { height:30px; }
+  .meta { display:grid; grid-template-columns:repeat(6, 1fr); background:var(--soft); border-radius:8px; overflow:hidden; }
+  .meta > div { padding:6px 10px; border-left:1px solid var(--line); min-width:0; }
+  .meta > div:first-child { border-left:0; }
+  .meta .k { font-size:8.5px; font-weight:700; letter-spacing:.08em; color:var(--muted); text-transform:uppercase; }
+  .meta .v { font-size:11.5px; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+
+  /* poz kartı */
+  .poz { border:1px solid var(--line); border-radius:10px; overflow:hidden; display:flex; flex-direction:column; flex:1; min-height:0; }
+  .poz-h { display:flex; align-items:center; gap:10px; padding:7px 10px; background:var(--navy); color:#fff; }
+  .poz-h .no { background:var(--accent); padding:3px 11px; border-radius:6px; font-size:15px; font-weight:800; letter-spacing:.04em; }
+  .poz-h .sys { flex:1; font-weight:600; font-size:14px; }
+  .poz-h .adet { background:rgba(255,255,255,.12); border:1px solid rgba(255,255,255,.2); padding:2px 10px; border-radius:999px; font-size:12.5px; font-weight:700; }
+  .poz-b { display:grid; grid-template-columns:1fr 56mm; flex:1; min-height:0; }
+  .poz-b > svg { width:100%; height:100%; max-height:112mm; display:block; padding:3mm; }
+  .spec { background:#fafbfb; border-left:1px solid var(--line); font-size:11px; padding:4px 0; display:flex; flex-direction:column; }
+  .spec > div { padding:5px 10px; border-bottom:1px solid var(--line); }
+  .spec > div:last-child { border-bottom:0; }
+  .spec .k { color:var(--muted); font-size:8.5px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; margin-bottom:1px; }
+  .spec .v { font-weight:600; line-height:1.3; }
+  .spec .v small { color:var(--muted); font-weight:500; }
+  .spec .big { font-size:14px; font-weight:800; color:var(--navy); }
+  .spec .motor { display:inline-block; background:var(--accent-l); color:var(--accent-d); border-radius:4px; padding:0 6px; font-weight:800; }
+  .sw { display:inline-block; width:12px; height:12px; border-radius:3px; box-shadow:inset 0 0 0 1px rgba(0,0,0,.25); vertical-align:-2px; margin-right:6px; }
   .warn { color:#c0392b; }
-  .ctrl { display:flex; gap:8px; padding:6px 8px; background:#fff6ec; border-top:1px dashed var(--accent); font-size:12px; flex-wrap:wrap; align-items:center; }
-  .ctrl select { font:inherit; font-size:12px; }
+
+  /* poz düzenleme formu (yalnızca ekranda) */
+  .ctrl { display:flex; gap:14px; padding:8px 10px; background:var(--accent-l); border-top:1px solid #cfe6d6; font-size:12px; flex-wrap:wrap; align-items:center; }
+  .ctrl .f { display:flex; align-items:center; gap:6px; }
+  .ctrl .f > span { font-size:10px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; color:var(--accent-d); }
+  .ctrl select { font:inherit; font-size:12px; padding:5px 26px 5px 9px; border:1px solid #b9d7c2; border-radius:7px; background:#fff;
+                 appearance:none; background-image:linear-gradient(45deg, transparent 50%, var(--accent-d) 50%), linear-gradient(135deg, var(--accent-d) 50%, transparent 50%);
+                 background-position:calc(100% - 13px) 50%, calc(100% - 8px) 50%; background-size:5px 5px; background-repeat:no-repeat; cursor:pointer; }
+  .ctrl select:focus { outline:2px solid rgba(46,139,71,.35); outline-offset:1px; }
+  .ctrl .seg { display:inline-flex; border:1px solid #b9d7c2; border-radius:7px; overflow:hidden; background:#fff; }
+  .ctrl .seg button { font:inherit; font-size:12px; font-weight:600; border:0; background:none; padding:5px 12px; cursor:pointer; color:var(--ink); }
+  .ctrl .seg button + button { border-left:1px solid #b9d7c2; }
+  .ctrl .seg button.on { background:var(--accent); color:#fff; }
+  .ctrl .note { margin-left:auto; color:var(--muted); font-size:11px; }
+  .foot { display:flex; justify-content:space-between; font-size:9px; color:var(--muted); border-top:1px solid var(--line); padding-top:2mm; margin-top:auto; }
+
   @page { size:A4 portrait; margin:0; }
   @media print {
     body { background:#fff; }
@@ -57,12 +100,17 @@
 </head>
 <body>
 <div class="bar">
-  <b>ZİP POZ ÇİZER</b>
-  <label class="btn ghost">Excel aç<input type="file" id="file" accept=".xlsm,.xlsx,.xls" hidden></label>
-  <button id="pdf" disabled>PDF kaydet</button>
+  <span class="brand"><i></i>ZİP POZ ÇİZER</span>
+  <label class="btn ghost"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6M9 13l6 6M15 13l-6 6"/></svg>Excel aç<input type="file" id="file" accept=".xlsm,.xlsx,.xls" hidden></label>
+  <button id="pdf" disabled><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12M7 10l5 5 5-5M5 21h14"/></svg>PDF kaydet</button>
   <span class="info" id="info">Proje Excel'ini (.xlsm) sürükleyin veya açın.</span>
 </div>
-<div id="drop">Proje Excel dosyasını buraya bırakın<br><small>1PROJE sayfasından sipariş verisi, 4POZ sayfasından imalat ölçüleri okunur.</small></div>
+<div id="drop">
+  <div class="ico"><svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 16V4M7 9l5-5 5 5M4 20h16"/></svg></div>
+  <h2>Proje Excel dosyasını buraya bırakın</h2>
+  <div>veya üstteki <b>Excel aç</b> düğmesini kullanın</div>
+  <ul><li>1PROJE → sipariş bilgileri</li><li>4POZ → imalat ölçüleri</li><li>Kapak · renk · kumaş · motor otomatik</li></ul>
+</div>
 <div id="pages"></div>
 
 <script>
@@ -155,7 +203,16 @@ function readWorkbook(wb) {
 }
 
 // ---------- Çizim ----------
-const DX = 0.52, DY = 0.34;               // eğik izdüşüm derinlik vektörü
+// Eğik izdüşüm: x genişlik (sağa), y aşağı, z derinlik (0 = kutu önü, artınca duvara doğru).
+// Duvara doğru gidilen noktalar sağa-yukarı kayar → sağ yan ve üst yüzler görünür (broşür görünüşü).
+const DX = 0.5, DY = 0.3;
+const VIEW = [-DX, DY, 1];                                   // izdüşüm doğrultusu (sahneye doğru)
+const nrm = v => { const l = Math.hypot(...v) || 1; return v.map(c => c / l); };
+const dot = (a, b) => a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
+const LIGHT = nrm([-0.35, -0.8, -0.55]);                       // sol-üst-önden ışık
+const HALF = nrm(LIGHT.map((c, k) => c - VIEW[k] * 0.6));
+const ACC = "#2e8b47", ACC_D = "#1d5e30", DIM = "#2d5a3d";
+
 function hull(pts) {
   pts = pts.slice().sort((a, b) => a[0] - b[0] || a[1] - b[1]);
   const cr = (o, a, b) => (a[0]-o[0])*(b[1]-o[1]) - (a[1]-o[1])*(b[0]-o[0]);
@@ -164,197 +221,401 @@ function hull(pts) {
   for (const p of pts.reverse()) { while (up.length >= 2 && cr(up[up.length-2], up[up.length-1], p) <= 0) up.pop(); up.push(p); }
   return lo.slice(0, -1).concat(up.slice(0, -1));
 }
-const ptsStr = a => a.map(p => p[0].toFixed(1) + "," + p[1].toFixed(1)).join(" ");
+const ptsStr = a => a.map(p => p[0].toFixed(2) + "," + p[1].toFixed(2)).join(" ");
+const hex2rgb = h => { const n = parseInt(h.slice(1), 16); return [n >> 16, (n >> 8) & 255, n & 255]; };
+const rgb2hex = c => "#" + c.map(v => Math.max(0, Math.min(255, Math.round(v))).toString(16).padStart(2, "0")).join("");
+function shade(hex, amt) { return rgb2hex(hex2rgb(hex).map(c => c * (1 - amt))); }
+function tint(hex, amt) { return rgb2hex(hex2rgb(hex).map(c => c + (255 - c) * amt)); }
+// Lambert + hafif parlama (toz boya: yarı mat)
+function light(n, gloss = 0.22) {
+  const d = Math.max(0, dot(n, LIGHT)), sp = Math.pow(Math.max(0, dot(n, HALF)), 18) * gloss;
+  return { f: 0.5 + 0.62 * d, sp };
+}
+function litHex(hex, n, gloss) {
+  const { f, sp } = light(n, gloss);
+  return rgb2hex(hex2rgb(hex).map(c => c * f + 255 * sp));
+}
 
-// Kutu kesit profili: (z, y) birim; z=0 ön, z=1 duvar; y=0 üst, y=1 alt
-function profile(kind) {
-  const arc = (cz, cy, rz, ry, a0, a1, n = 10) => Array.from({ length: n + 1 }, (_, i) => {
-    const t = a0 + (a1 - a0) * i / n; return [cz + rz * Math.cos(t), cy + ry * Math.sin(t)]; });
-  const P = Math.PI;
-  switch (kind) {
-    case "soft":  return [[1,0],[0.32,0], ...arc(0.32,0.5,0.32,0.5,-P/2,-3*P/2,14).slice(1,-1), [0.32,1],[1,1]];
-    case "round": return [[1,0],[0.5,0], ...arc(0.5,0.5,0.5,0.5,-P/2,-3*P/2,16).slice(1,-1), [0.5,1],[1,1]];
-    case "wave":  return [[1,0],[0.28,0], ...arc(0.28,0.27,0.22,0.27,-P/2,-P,7).slice(1),
-                          [0.1,0.52], ...arc(0.26,0.76,0.2,0.24,-P,-3*P/2,7), [1,1]];
-    default:      return [[1,0],[0,0],[0,1],[1,1]];
-  }
+// Kutu kesiti (PDF'den çıkarılmış, mm). x: 0 duvar tarafı → w ön; y: 0 üst → h alt.
+function sectionOf(kapak) {
+  const key = kapak === "sharp130" ? "sharp" : kapak === "round" ? "soft" : kapak;
+  const pr = (window.PROFILLER || {})[key] || window.PROFILLER.sharp;
+  const k = kapak === "sharp130" ? 130 / 110 : 1;
+  const sc = a => a.map(([x, y]) => [x * k, y * k]);
+  return { w: pr.w * k, h: pr.h * k, outline: sc(pr.outline), section: sc(pr.section),
+           slot: pr.slot.map(v => v * k), screws: sc([[6.5, 7.5], [6.5, 102.5], [pr.w - 12, 7.5]]) };
 }
 
 function drawPoz(p, i) {
   const W = +p.iw || 1000, H = +p.ih || 1000;
-  let s = Math.min(420 / W, 340 / H);
-  let fw = Math.max(W * s, 200), fh = Math.max(H * s, 200);
-  const big = p.kapak === "sharp130";
-  const D = big ? 78 : 66, bh = big ? 70 : 58, rw = 15;
-  const x0 = 0, y0 = 0;
-  const bb = [1e9, 1e9, -1e9, -1e9];
-  const ext = (x, y) => { bb[0] = Math.min(bb[0], x); bb[1] = Math.min(bb[1], y); bb[2] = Math.max(bb[2], x); bb[3] = Math.max(bb[3], y); };
-  const P = (x, y, z) => { const q = [x0 + x + z * DX, y0 + y - z * DY]; ext(q[0], q[1]); return q; };
+  const s = Math.min(440 / W, 330 / H);
+  const sec = sectionOf(p.kapak);
+  const e = Math.max(s, 0.5);                       // kutu/dikme detay ölçeği (okunabilirlik için büyütülmüş)
+  const Dp = sec.w * e, bh = sec.h * e;             // kutu derinliği ve yüksekliği
+  const fw = Math.max(W * s, 230);
+  const bot = Math.max(H * s, bh + 150);            // kutu üstünden dikme altına toplam yükseklik
+  const rw = 21 * e, rd = 44 * e;                   // dikme ön yüz genişliği ve derinliği
+  const zf = Dp - (sec.slot[0] + sec.slot[1]) / 2 * e;   // kumaş düzlemi (kutu yarığı hizası)
+  const zr0 = Dp - rd;                              // dikme ön yüzü
+  const hb = Math.max(42 * e, 13), barY = bot - hb - 4 * e;
   const pc = profileColor(p.renk), fc = fabricColor(p.kumas, p.kumasRenk), fk = fabricKind(p.kumas);
   const side = motorSide(p.motorYon) || p.forceSide || "R";
   const hasMotor = !String(p.motor).toUpperCase().includes("MOTORSUZ");
-  const pf = profile(p.kapak).map(([z, y]) => [z * D, y * bh]);
   const id = "p" + i;
-  const prof = pc.wood ? `url(#${id}wood)` : pc.hex;
-  const out = [];
-
-  // defs: kumaş dokusu, ahşap, metal
-  out.push(`<defs>
-    <pattern id="${id}mesh" width="5" height="5" patternUnits="userSpaceOnUse">
-      <rect width="5" height="5" fill="${fc}"/>
-      ${fk === "mesh" ? `<path d="M0 .5H5M.5 0V5" stroke="${shade(fc, 0.25)}" stroke-width=".7"/>` : ""}
-      ${fk === "clear" ? `<path d="M0 5L5 0" stroke="#fff" stroke-opacity=".5" stroke-width=".6"/>` : ""}
-    </pattern>
-    <linearGradient id="${id}fshade" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#fff" stop-opacity=".22"/><stop offset=".6" stop-color="#fff" stop-opacity="0"/>
-      <stop offset="1" stop-color="#000" stop-opacity=".18"/></linearGradient>
-    ${pc.wood ? `<pattern id="${id}wood" width="60" height="8" patternUnits="userSpaceOnUse">
-      <rect width="60" height="8" fill="${pc.wood[0]}"/>
-      <path d="M0 2Q15 1 30 2.5T60 2M0 5.5Q20 6.5 35 5T60 6" stroke="${pc.wood[1]}" stroke-width=".9" fill="none" opacity=".7"/></pattern>` : ""}
-    <linearGradient id="${id}tube" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#e9ebed"/><stop offset=".45" stop-color="#b5babf"/><stop offset="1" stop-color="#6f757b"/></linearGradient>
-    <linearGradient id="${id}motor" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#ffb066"/><stop offset=".5" stop-color="${"#e0761c"}"/><stop offset="1" stop-color="#9c4a08"/></linearGradient>
-    <marker id="${id}ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
-      <path d="M0 0L10 5L0 10z" fill="#1d1f21"/></marker>
-  </defs>`);
-
+  const base = pc.wood ? pc.wood[0] : pc.hex;
+  const bb = [1e9, 1e9, -1e9, -1e9];
+  const ext = (x, y) => { bb[0] = Math.min(bb[0], x); bb[1] = Math.min(bb[1], y); bb[2] = Math.max(bb[2], x); bb[3] = Math.max(bb[3], y); };
+  const P = (x, y, z) => { const q = [x + z * DX, y - z * DY]; ext(q[0], q[1]); return q; };
+  const secZY = pts => pts.map(([xj, yj]) => [Dp - xj * e, yj * e]);   // (z, y)
+  const out = [], defs = [];
   const poly = (pts, fill, extra = "") => out.push(`<polygon points="${ptsStr(pts)}" fill="${fill}" ${extra}/>`);
-  const ln = "stroke=\"#1d1f21\" stroke-width=\".9\" stroke-linejoin=\"round\"";
-  const top = bh, bot = bh + fh;
+  const edge = `stroke="#000" stroke-opacity=".35" stroke-width=".5" stroke-linejoin="round"`;
 
-  // duvar gölgesi
-  poly([P(-6, top, D), P(fw + 6, top, D), P(fw + 6, bot + 4, D), P(-6, bot + 4, D)], "#000", "opacity=\".06\"");
+  // Yüzey boyama: düz renk → ışıklandırılmış tek renk; ahşap → doku + gölge katmanı
+  const surf = (pts, n, opt = {}) => {
+    const wood = pc.wood && !opt.color;
+    const col = opt.color || base;
+    if (!wood) {
+      const c = litHex(col, n, opt.gloss);
+      poly(pts, c, `stroke="${c}" stroke-width=".6" stroke-linejoin="round" ${opt.extra || ""}`);
+    } else {
+      poly(pts, `url(#${id}${opt.vert ? "woodV" : "woodH"})`, opt.extra || "");
+      const { f, sp } = light(n, opt.gloss);
+      const o = f < 1 ? `fill="#000" fill-opacity="${((1 - f) * 0.9).toFixed(3)}"` : `fill="#fff" fill-opacity="${((f - 1) * 0.8).toFixed(3)}"`;
+      out.push(`<polygon points="${ptsStr(pts)}" ${o}/>`);
+      if (sp > 0.01) poly(pts, "#fff", `fill-opacity="${sp.toFixed(3)}"`);
+    }
+  };
 
-  // kumaş
-  const zf = D - 24, barY = bot - 16;
-  poly([P(rw, top, zf), P(fw - rw, top, zf), P(fw - rw, barY, zf), P(rw, barY, zf)], `url(#${id}mesh)`, ln);
-  poly([P(rw, top, zf), P(fw - rw, top, zf), P(fw - rw, barY, zf), P(rw, barY, zf)], `url(#${id}fshade)`);
+  // ---------- defs ----------
+  const meshDark = shade(fc, 0.28), meshLight = tint(fc, 0.18);
+  defs.push(`
+    <pattern id="${id}mesh" width="2.4" height="2.4" patternUnits="userSpaceOnUse">
+      <rect width="2.4" height="2.4" fill="${fc}"/>
+      ${fk === "mesh" ? `<path d="M0 .6H2.4M0 1.8H2.4" stroke="${meshDark}" stroke-width=".55"/><path d="M.6 0V2.4M1.8 0V2.4" stroke="${meshLight}" stroke-width=".45" stroke-opacity=".7"/>` : ""}
+      ${fk === "solid" ? `<path d="M0 1.2H2.4" stroke="${meshDark}" stroke-width=".25" stroke-opacity=".5"/>` : ""}
+    </pattern>
+    <linearGradient id="${id}fLight" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#fff" stop-opacity=".2"/><stop offset=".45" stop-color="#fff" stop-opacity="0"/>
+      <stop offset="1" stop-color="#000" stop-opacity=".22"/></linearGradient>
+    <linearGradient id="${id}fTop" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#000" stop-opacity=".45"/><stop offset="1" stop-color="#000" stop-opacity="0"/></linearGradient>
+    <linearGradient id="${id}clear" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#fff" stop-opacity=".0"/><stop offset=".3" stop-color="#fff" stop-opacity=".55"/>
+      <stop offset=".36" stop-color="#fff" stop-opacity="0"/><stop offset=".62" stop-color="#fff" stop-opacity=".3"/>
+      <stop offset=".66" stop-color="#fff" stop-opacity="0"/></linearGradient>
+    <linearGradient id="${id}wallG" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#efe6d8"/><stop offset=".6" stop-color="#e7dccb"/><stop offset="1" stop-color="#dccfbb"/></linearGradient>
+    <linearGradient id="${id}wallFoot" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#6b5a43" stop-opacity="0"/><stop offset="1" stop-color="#6b5a43" stop-opacity=".18"/></linearGradient>
+    <linearGradient id="${id}floorG" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#d9cbb5"/><stop offset=".35" stop-color="#e6dac7"/><stop offset="1" stop-color="#efe7da"/></linearGradient>
+    <linearGradient id="${id}room" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#16120e"/><stop offset=".6" stop-color="#2b231b"/><stop offset="1" stop-color="#1c1712"/></linearGradient>
+    <radialGradient id="${id}roomGlow" cx=".3" cy=".35" r=".45">
+      <stop offset="0" stop-color="#e2b77a" stop-opacity=".35"/><stop offset="1" stop-color="#e2b77a" stop-opacity="0"/></radialGradient>
+    <radialGradient id="${id}vig" cx=".5" cy=".5" r=".72">
+      <stop offset=".62" stop-color="#fff" stop-opacity="0"/><stop offset="1" stop-color="#fff" stop-opacity=".95"/></radialGradient>
+    <filter id="${id}grain" x="0" y="0" width="100%" height="100%">
+      <feTurbulence type="fractalNoise" baseFrequency=".75" numOctaves="2" seed="${i + 3}"/>
+      <feColorMatrix values="0 0 0 0 .42  0 0 0 0 .35  0 0 0 0 .26  1.1 0 0 0 -.42"/></filter>
+    <filter id="${id}blur" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="${(4 * Math.max(e, 0.6)).toFixed(1)}"/></filter>
+    <filter id="${id}blurS" x="-20%" y="-50%" width="140%" height="200%"><feGaussianBlur stdDeviation="3"/></filter>
+    <filter id="${id}blurL" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="9"/></filter>
+    <marker id="${id}ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0 0L10 5L0 10z" fill="${DIM}"/></marker>
+    <marker id="${id}arG" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M0 0L10 5L0 10z" fill="#444"/></marker>`);
+  if (pc.wood) for (const [nm, rot] of [["woodH", 0], ["woodV", 90]]) defs.push(`
+    <pattern id="${id}${nm}" width="70" height="9" patternUnits="userSpaceOnUse" patternTransform="rotate(${rot})">
+      <rect width="70" height="9" fill="${pc.wood[0]}"/>
+      <path d="M0 2Q18 1 35 2.6T70 2M0 5.6Q22 6.8 40 5.2T70 6.2M0 8Q30 7.4 70 8.3" stroke="${pc.wood[1]}" stroke-width=".8" fill="none" opacity=".75"/>
+      <path d="M0 3.8Q25 4.4 50 3.6T70 4" stroke="${tint(pc.wood[0], .25)}" stroke-width=".6" fill="none" opacity=".6"/></pattern>`);
+  // Silindir gradyanı (ekranda dikey; y = yc - z*DY sabit olduğundan tüm x'te aynı)
+  const cylGrad = (name, cy, R, stops) => {
+    const a = R * Math.hypot(1, DY);
+    defs.push(`<linearGradient id="${id}${name}" gradientUnits="userSpaceOnUse" x1="0" y1="${(cy - a).toFixed(2)}" x2="0" y2="${(cy + a).toFixed(2)}">
+      ${stops.map(([o, c]) => `<stop offset="${o}" stop-color="${c}"/>`).join("")}</linearGradient>`);
+    return `url(#${id}${name})`;
+  };
+
+  // ---------- duvar gölgesi ----------
+  const sh = (x0, y0, x1, y1) => [P(x0, y0, Dp), P(x1, y0, Dp), P(x1, y1, Dp), P(x0, y1, Dp)].map(([x, y]) => [x + 7 * e + 3, y + 9 * e + 3]);
+  out.push(`<g filter="url(#${id}blur)" opacity=".38">`);
+  poly(sh(0, 0, fw, bh), "#2a2620");
+  poly(sh(0, bh, rw, bot), "#2a2620"); poly(sh(fw - rw, bh, fw, bot), "#2a2620");
+  out.push(`</g>`);
+  // zemine temas gölgesi (dikme ve çıta dibi)
+  out.push(`<g filter="url(#${id}blurS)" opacity=".55">`);
+  for (const [xa, xb] of [[-3 * e, rw + 4 * e], [fw - rw - 3 * e, fw + 6 * e]])
+    poly([P(xa, bot, zr0 - 8 * e), P(xb, bot, zr0 - 8 * e), P(xb, bot, Dp), P(xa, bot, Dp)], "#2a2118");
+  poly([P(rw, bot, zf - 18 * e), P(fw - rw, bot, zf - 18 * e), P(fw - rw, bot, zf + 10 * e), P(rw, bot, zf + 10 * e)], "#2a2118", `opacity=".6"`);
+  out.push(`</g>`);
+
+  // ---------- pencere açıklığı (perdenin arkası: iç mekân) ----------
+  const opn = [P(rw, bh, Dp), P(fw - rw, bh, Dp), P(fw - rw, bot, Dp), P(rw, bot, Dp)];
+  poly(opn, `url(#${id}room)`);
+  poly(opn, `url(#${id}roomGlow)`);
+
+  // ---------- kumaş ----------
+  const fx0 = rw * 0.55, fx1 = fw - rw * 0.55;
+  const fab = [P(fx0, bh, zf), P(fx1, bh, zf), P(fx1, barY, zf), P(fx0, barY, zf)];
+  if (fk === "clear") poly(fab, "#cfe0e8", `fill-opacity=".4"`);
+  else poly(fab, `url(#${id}mesh)`, fk === "mesh" ? `opacity=".86"` : "");
+  poly(fab, fk === "clear" ? `url(#${id}clear)` : `url(#${id}fLight)`);
+  const ft = [P(fx0, bh, zf), P(fx1, bh, zf), P(fx1, bh + 34 * e, zf), P(fx0, bh + 34 * e, zf)];
+  poly(ft, `url(#${id}fTop)`);
   if (!blank(p.baski)) {
-    const c = P(fw / 2, top + (barY - top) / 2, zf);
-    out.push(`<text x="${c[0]}" y="${c[1]}" text-anchor="middle" font-size="13" font-weight="700" fill="#fff" stroke="#000" stroke-width=".3" opacity=".85">BASKI / LOGO</text>`);
+    const c = P(fw / 2, (bh + barY) / 2, zf);
+    out.push(`<text x="${c[0]}" y="${c[1]}" text-anchor="middle" font-size="13" font-weight="700" fill="#fff" fill-opacity=".9" letter-spacing=".12em">BASKI / LOGO</text>`);
   }
 
-  // alt çıta
-  const bz0 = D - 38, bz1 = D - 10;
-  poly([P(rw, barY, bz0), P(fw - rw, barY, bz0), P(fw - rw, barY, bz1), P(rw, barY, bz1)], shadeFill(prof, pc, 0.15), ln);
-  poly([P(rw, barY, bz0), P(fw - rw, barY, bz0), P(fw - rw, bot - 3, bz0), P(rw, bot - 3, bz0)], prof, ln);
-
-  // dikmeler (yan profiller): ön yüz + sağ yan yüz
-  const rz0 = 14, rz1 = D;
-  for (const xa of [0, fw - rw]) {
-    poly([P(xa + rw, top, rz0), P(xa + rw, top, rz1), P(xa + rw, bot, rz1), P(xa + rw, bot, rz0)], prof, ln);
-    poly([P(xa + rw, top, rz0), P(xa + rw, top, rz1), P(xa + rw, bot, rz1), P(xa + rw, bot, rz0)], "#000", "opacity=\".28\"");
-    poly([P(xa, top, rz0), P(xa + rw, top, rz0), P(xa + rw, bot, rz0), P(xa, bot, rz0)], prof, ln);
-    poly([P(xa + 3, top, rz0), P(xa + 5, top, rz0), P(xa + 5, bot, rz0), P(xa + 3, bot, rz0)], "#fff", "opacity=\".18\"");
+  // ---------- alt çıta (broşürdeki gibi yüksek, altta fırça) ----------
+  const bz0 = zf - 13 * e, bz1 = zf + 9 * e, bxa = rw * 0.6, bxb = fw - rw * 0.6;
+  surf([P(bxa, barY, bz0), P(bxb, barY, bz0), P(bxb, barY, bz1), P(bxa, barY, bz1)], [0, -1, 0]);          // üst
+  surf([P(bxa, barY + 3 * e, bz0 - 3 * e), P(bxb, barY + 3 * e, bz0 - 3 * e), P(bxb, barY, bz0), P(bxa, barY, bz0)], nrm([0, -1, -1])); // pah
+  surf([P(bxa, barY + 3 * e, bz0 - 3 * e), P(bxb, barY + 3 * e, bz0 - 3 * e), P(bxb, bot - 6 * e, bz0 - 3 * e), P(bxa, bot - 6 * e, bz0 - 3 * e)], [0, -0.15, -1]); // ön
+  { // çıta önünde ince yatay çizgi + fırça
+    const l0 = P(bxa, barY + hb * 0.32, bz0 - 3 * e), l1 = P(bxb, barY + hb * 0.32, bz0 - 3 * e);
+    out.push(`<line x1="${l0[0]}" y1="${l0[1]}" x2="${l1[0]}" y2="${l1[1]}" stroke="#000" stroke-opacity=".22" stroke-width=".7"/>`);
+    const b0 = P(bxa, bot - 6 * e, bz0 + 2 * e), b1 = P(bxb, bot - 6 * e, bz0 + 2 * e), bH = Math.max(4 * e + 1.5, 3);
+    out.push(`<rect x="${b0[0]}" y="${b0[1]}" width="${b1[0] - b0[0]}" height="${bH}" fill="#1b1b1b"/>`);
+    const n = Math.floor((b1[0] - b0[0]) / 2.6);
+    out.push(`<path d="${Array.from({ length: n }, (_, k) => `M${(b0[0] + 1.3 + k * 2.6).toFixed(2)} ${(b0[1] + bH * 0.35).toFixed(2)}v${(bH * 0.65).toFixed(2)}`).join("")}" stroke="#5a5a5a" stroke-width="1.1"/>`);
+    ext(b0[0], b0[1] + bH);
   }
 
-  // kutu: arka (görünmeyen) yüzler, iç, ön yüzler
-  const strips = [];
-  for (let k = 0; k < pf.length; k++) {
-    const a = pf[k], b = pf[(k + 1) % pf.length];
-    let nz = b[1] - a[1], ny = -(b[0] - a[0]);              // dış normal (saat yönü tersi kontrolü aşağıda)
-    strips.push({ a, b, nz, ny });
-  }
-  // profil yönünü düzelt: normal dışarı baksın
-  const area = pf.reduce((s, a, k) => { const b = pf[(k + 1) % pf.length]; return s + a[0] * b[1] - b[0] * a[1]; }, 0);
-  const sgn = area > 0 ? -1 : 1;
-  const x1 = fw;
-  const quad = st => [P(0, st.a[1], st.a[0]), P(x1, st.a[1], st.a[0]), P(x1, st.b[1], st.b[0]), P(0, st.b[1], st.b[0])];
-  const vis = st => { const nz = st.nz * sgn, ny = st.ny * sgn, l = Math.hypot(nz, ny) || 1; return (-nz * 0.75 - ny * 0.66) / l; };
-  // iç karanlık
-  poly([P(0, 0, D), P(x1, 0, D), P(x1, bh, D), P(0, bh, D)], "#2a2c2f", ln);
-  for (const st of strips) if (vis(st) <= 0.02) poly(quad(st), "#3a3d41", ln);
+  // ---------- dikmeler: ince ön yüz, açık tonlu dış yan, iç tarafta fermuar şeridi ----------
+  const rail = (xa, xb, outerVisible) => {
+    // iç yan (sol dikmenin sağ yüzü): kumaş düzlemine kadar görünür
+    if (!outerVisible) {
+      surf([P(xb, bh, zr0), P(xb, bh, zf), P(xb, bot, zf), P(xb, bot, zr0)], [1, 0, 0], { vert: true });
+      const zp = [P(xb, bh, zf - 6 * e), P(xb, bh, zf), P(xb, bot - 2, zf), P(xb, bot - 2, zf - 6 * e)];
+      poly(zp, "#151515");                                                                        // fermuar kanalı
+      const m = P(xb, bh, zf - 3 * e), m2 = P(xb, bot - 2, zf - 3 * e);
+      out.push(`<line x1="${m[0]}" y1="${m[1]}" x2="${m2[0]}" y2="${m2[1]}" stroke="#3c3c3c" stroke-width="${Math.max(1, 2 * e)}" stroke-dasharray="1 1.2"/>`);
+    }
+    // ön yüz
+    surf([P(xa, bh, zr0), P(xb, bh, zr0), P(xb, bot, zr0), P(xa, bot, zr0)], [0, 0, -1], { vert: true });
+    // kenar pahları / ışık çizgisi
+    const h0 = P(xa + 1.2 * e, bh, zr0), h1 = P(xa + 1.2 * e, bot, zr0);
+    out.push(`<line x1="${h0[0]}" y1="${h0[1]}" x2="${h1[0]}" y2="${h1[1]}" stroke="#fff" stroke-opacity=".28" stroke-width="${Math.max(.6, e)}"/>`);
+    const g0 = P(xb - 1 * e, bh, zr0), g1 = P(xb - 1 * e, bot, zr0);
+    out.push(`<line x1="${g0[0]}" y1="${g0[1]}" x2="${g1[0]}" y2="${g1[1]}" stroke="#000" stroke-opacity=".25" stroke-width=".6"/>`);
+    if (outerVisible) {
+      const sideHex = tint(base, 0.18);
+      surf([P(xb, bh, zr0), P(xb, bh, Dp), P(xb, bot, Dp), P(xb, bot, zr0)], [1, 0, 0], { vert: true, color: pc.wood ? null : sideHex });
+      const ln0 = P(xb, bh, zr0), ln1 = P(xb, bot, zr0);
+      out.push(`<line x1="${ln0[0]}" y1="${ln0[1]}" x2="${ln1[0]}" y2="${ln1[1]}" stroke="#000" stroke-opacity=".3" stroke-width=".6"/>`);
+    }
+    // alt uç tapası
+    poly([P(xa, bot - 3 * e, zr0 - .1), P(xb, bot - 3 * e, zr0 - .1), P(xb, bot, zr0 - .1), P(xa, bot, zr0 - .1)], "#1d1d1d", `opacity=".85"`);
+  };
+  rail(0, rw, false);
+  rail(fw - rw, fw, true);
 
-  // boru + motor
-  const zc = D * 0.55, yc = bh * 0.47, r = bh * 0.27;
-  const circ = (x, rr) => Array.from({ length: 24 }, (_, k) => { const t = k / 24 * 2 * Math.PI;
-    return P(x, yc + rr * Math.sin(t), zc + rr * Math.cos(t)); });
-  const cyl = (xa, xb, rr, fill) => { poly(hull(circ(xa, rr).concat(circ(xb, rr))), fill, ln); poly(circ(xb, rr), shadeFill(fill, null, 0.0), ln); };
-  cyl(10, fw - 10, r, `url(#${id}tube)`);
-  const Lm = Math.min(Math.max(fw * 0.34, 90), 150);
-  let motorAnchor;
+  // ---------- kutu ----------
+  const ol = secZY(sec.outline);
+  const area = ol.reduce((a, q, k) => { const r = ol[(k + 1) % ol.length]; return a + q[0] * r[1] - r[0] * q[1]; }, 0);
+  const sg = area > 0 ? 1 : -1;
+  const strips = ol.map((a, k) => {
+    const b = ol[(k + 1) % ol.length];
+    const n = nrm([0, -(b[0] - a[0]) * sg, (b[1] - a[1]) * sg]);    // dış normal (x, y, z)
+    return { a, b, n, vis: dot(n, VIEW) < -1e-3 };
+  });
+  const quad = (st, xa, xb) => [P(xa, st.a[1], st.a[0]), P(xb, st.a[1], st.a[0]), P(xb, st.b[1], st.b[0]), P(xa, st.b[1], st.b[0])];
+  const inner = shade(base, 0.55);
+  // iç yüzler (arka/alt) — açık ağızdan görünen koyu iç
+  for (const st of strips) if (!st.vis) surf(quad(st, 0, fw), st.n.map(c => -c), { color: inner, gloss: 0 });
+
+  // boru, kumaş rulosu, motor
+  const R = 31 * e, rt = 24 * e, zc = zf - R, yc = bh * 0.48;
+  // kutudan yarığa inen kumaş
+  poly([P(fx0, yc, zf), P(fx1, yc, zf), P(fx1, bh, zf), P(fx0, bh, zf)], `url(#${id}mesh)`);
+  poly([P(fx0, yc, zf), P(fx1, yc, zf), P(fx1, bh, zf), P(fx0, bh, zf)], "#000", `fill-opacity=".35"`);
+  const cyc = P(0, yc, zc)[1];
+  const gRoll = cylGrad("roll", cyc, R, [[0, tint(fc, .35)], [.22, tint(fc, .15)], [.6, fc], [1, shade(fc, .55)]]);
+  const gTube = cylGrad("tube", cyc, rt, [[0, "#f4f5f6"], [.2, "#dfe2e5"], [.55, "#a9aeb3"], [1, "#5c6166"]]);
+  const gMot = cylGrad("mot", cyc, rt * .82, [[0, "#b9ebc3"], [.18, "#6fcf86"], [.55, ACC], [1, "#123f20"]]);
+  const gHead = cylGrad("head", cyc, rt * 1.08, [[0, "#6a6a6a"], [.25, "#3a3a3a"], [1, "#0d0d0d"]]);
+  const circ = (x, rr) => Array.from({ length: 36 }, (_, k) => { const t = k / 36 * 2 * Math.PI; return P(x, yc + rr * Math.sin(t), zc + rr * Math.cos(t)); });
+  const cyl = (xa, xb, rr, fill, endFill) => {
+    if (xb - xa < 0.5) return;
+    poly(hull(circ(xa, rr).concat(circ(xb, rr))), fill, `stroke="#000" stroke-opacity=".25" stroke-width=".4"`);
+    poly(circ(xb, rr), endFill || fill, `stroke="#000" stroke-opacity=".3" stroke-width=".4"`);
+  };
+  const Lm = Math.min(Math.max(560 * s, 62), fw * 0.42);
+  const head = 7 * e;
+  let mx0, mx1, motorAnchor;
+  if (hasMotor && side === "L") {
+    mx0 = 3 * e; mx1 = mx0 + head + Lm;
+    cyl(mx0, mx0 + head, rt * 1.08, `url(#${id}head)`, "#222");
+    cyl(mx0 + head, mx1, rt * 0.82, gMot, "#2a6b3a");
+    cyl(mx1 - 2, mx1 + 3 * e, rt, gTube, "#9aa0a6");                               // boru kesit ağzı
+    cyl(mx1 + 3 * e, fw - 6 * e, R, gRoll, shade(fc, .25));
+    cyl(fw - 6 * e, fw - 3 * e, rt * .45, "#333", "#555");                          // karşı uç (yataklama)
+  } else if (hasMotor) {
+    mx1 = fw - 3 * e; mx0 = mx1 - head - Lm;
+    cyl(3 * e, 6 * e, rt * .45, "#333", "#555");
+    cyl(6 * e, mx0 - 3 * e, R, gRoll, shade(fc, .25));
+    const ring = circ(mx0 - 3 * e, rt), ringI = circ(mx0 - 3 * e, rt * .86);
+    poly(ring, "#c9cdd1", `stroke="#000" stroke-opacity=".35" stroke-width=".4"`); poly(ringI, "#3a3d40");   // boru kesit ağzı
+    cyl(mx0 - 3 * e, mx1 - head, rt * 0.82, gMot, "#2a6b3a");
+    cyl(mx1 - head, mx1, rt * 1.08, `url(#${id}head)`, "#222");
+  } else {
+    cyl(3 * e, 6 * e, rt * .45, "#333", "#555");
+    cyl(6 * e, fw - 6 * e, R, gRoll, shade(fc, .25));
+    cyl(fw - 6 * e, fw - 3 * e, rt * .45, "#333", "#555");
+  }
   if (hasMotor) {
-    if (side === "R") { cyl(fw - 10 - Lm, fw - 4, r * 0.86, `url(#${id}motor)`); motorAnchor = P(fw - 10 - Lm / 2, yc - r, zc); }
-    else              { cyl(4, 10 + Lm, r * 0.86, `url(#${id}motor)`);           motorAnchor = P(10 + Lm / 2, yc - r, zc); }
-    // kablo: motor başından dikme içine
-    const hx = side === "R" ? fw - 4 : 4, h0 = P(hx, yc, zc), rail = P(side === "R" ? fw - rw / 2 : rw / 2, top + 40, rz0 + 10);
-    out.push(`<path d="M${h0[0]} ${h0[1]}C${h0[0] + (side === "R" ? 18 : -18)} ${h0[1] + 10} ${rail[0]} ${rail[1] - 40} ${rail[0]} ${rail[1]}" stroke="#111" stroke-width="2.2" fill="none" stroke-dasharray="${side === "R" ? "0" : "0"}"/>`);
+    // motor gövdesinde etiket bandı
+    const xm = (mx0 + mx1) / 2;
+    motorAnchor = P(xm, yc - rt * 0.82, zc);
+    const lb = [P(xm - 9 * e, yc - rt * .8, zc), P(xm + 9 * e, yc - rt * .8, zc), P(xm + 9 * e, yc + rt * .5, zc - rt * .5), P(xm - 9 * e, yc + rt * .5, zc - rt * .5)];
+    poly(lb, "#fff", `fill-opacity=".22"`);
   }
 
-  // ön (görünen) yüzler — kesit görünümü için yarı saydam
+  // dış (görünen) yüzler: üst yüzler tam, ön yüz kesitli pencere (içerisi görünsün)
+  // kesit penceresi yalnızca motor bölgesinde; motorsuzda ortada dar pencere
+  const edgeM = Math.max(9, fw * 0.035);
+  let cA, cB;
+  if (hasMotor && side === "R") { cA = Math.max(edgeM, mx0 - 26 * e); cB = fw - edgeM; }
+  else if (hasMotor)            { cA = edgeM; cB = Math.min(fw - edgeM, mx1 + 26 * e); }
+  else                          { cA = fw * 0.38; cB = fw * 0.62; }
+  const isTop = st => st.n[1] < -0.8;
   for (const st of strips) {
-    const v = vis(st);
-    if (v <= 0.02) continue;
-    const isTop = Math.abs(st.ny * sgn) > Math.abs(st.nz * sgn);
-    poly(quad(st), prof, `${ln} fill-opacity="${isTop ? 0.95 : 0.32}"`);
-    poly(quad(st), v > 0.6 ? "#fff" : "#000", `opacity="${isTop ? 0.12 : 0.06}"`);
+    if (!st.vis) continue;
+    if (isTop(st)) surf(quad(st, 0, fw), st.n);
+    else { if (cA > 0.5) surf(quad(st, 0, cA), st.n); if (fw - cB > 0.5) surf(quad(st, cB, fw), st.n); }
   }
-  // sağ uç: açık kapak ağzı
-  const endR = pf.map(([z, y]) => P(x1, y, z));
-  out.push(`<polygon points="${ptsStr(endR)}" fill="none" stroke="#1d1f21" stroke-width="1.4" stroke-dasharray="4 2"/>`);
-  const endL = pf.map(([z, y]) => P(0, y, z));
-  out.push(`<polygon points="${ptsStr(endL)}" fill="none" stroke="#1d1f21" stroke-width="1" stroke-dasharray="4 2"/>`);
+  // kesit pencere kenarları (et kalınlığı)
+  const cutLine = x => strips.filter(st => st.vis && !isTop(st)).map(st => P(x, st.a[1], st.a[0])).concat([(() => { const l = strips.filter(st => st.vis && !isTop(st)); const b = l[l.length - 1].b; return P(x, b[1], b[0]); })()]);
+  for (const x of [cA, cB]) out.push(`<polyline points="${ptsStr(cutLine(x))}" fill="none" stroke="${tint(base, .45)}" stroke-width="${Math.max(1.2, 2.2 * e)}" stroke-linejoin="round"/>`);
+  // üst kenar ışık çizgisi
+  { const tp = strips.filter(st => st.vis && isTop(st)).map(st => st.b); if (tp.length) { const t = tp[tp.length - 1]; const a = P(0, t[1], t[0]), b = P(fw, t[1], t[0]);
+    out.push(`<line x1="${a[0]}" y1="${a[1]}" x2="${b[0]}" y2="${b[1]}" stroke="#fff" stroke-opacity=".35" stroke-width=".8"/>`); } }
+  // sağ uç: kapak sökülü → gerçek ince cidarlı profil kesiti
+  const secR = secZY(sec.section).map(([z, y]) => P(fw, y, z));
+  poly(secR, tint(base, 0.3), `stroke="#000" stroke-opacity=".55" stroke-width=".5" stroke-linejoin="round"`);
 
-  // ayrılmış kapaklar
-  const capOff = 46;
-  for (const [cx, dir] of [[x1 + capOff, 1], [-capOff, -1]]) {
-    const cap = pf.map(([z, y]) => P(cx, y - 14, z));
-    const capB = pf.map(([z, y]) => P(cx - 6 * dir, y - 14, z));
-    poly(hull(cap.concat(capB)), prof, ln);
-    poly(cap, prof, ln);
-    poly(cap, "#fff", "opacity=\".15\"");
-    for (const [z, y] of [[D * 0.8, bh * 0.15], [D * 0.8, bh * 0.85]]) { const q = P(cx, y - 14, z); out.push(`<circle cx="${q[0]}" cy="${q[1]}" r="1.6" fill="#111"/>`); }
-    const a = P(cx - (capOff - 10) * dir, bh / 2, D / 2), b = P(cx - 10 * dir, bh / 2 - 14, D / 2);
-    out.push(`<line x1="${a[0]}" y1="${a[1]}" x2="${b[0]}" y2="${b[1]}" stroke="#1d1f21" stroke-dasharray="3 3" marker-start="url(#${id}ar)"/>`);
+  // ---------- sökülmüş yan kapaklar ----------
+  const capGap = Math.max(30, 62 * e), tc = 5 * e;
+  const capFace = (x, inside, motorHere) => {
+    const pts = ol.map(([z, y]) => P(x, y, z));
+    // kalınlık (görünen çevre şeritleri)
+    for (const st of strips) if (st.vis) surf(quad(st, x - tc, x), st.n);
+    surf(pts, [1, 0, 0], { extra: `stroke="#000" stroke-opacity=".4" stroke-width=".5"` });
+    poly(pts, `url(#${id}fLight)`);
+    for (const [xj, yj] of sec.screws) {
+      const q = P(x, yj * e, Dp - xj * e), r = Math.max(1.3, 2.4 * e);
+      out.push(`<circle cx="${q[0]}" cy="${q[1]}" r="${r}" fill="#d9dcdf" stroke="#555" stroke-width=".5"/><path d="M${q[0] - r * .6} ${q[1]}h${r * 1.2}" stroke="#555" stroke-width=".5"/>`);
+    }
+    if (inside) {   // iç yüz: yatak/motor bağlantısı
+      const c = P(x, yc, zc);
+      if (motorHere) {
+        const a = rt * 0.9;
+        poly([P(x, yc - a, zc - a), P(x, yc - a, zc + a), P(x, yc + a, zc + a), P(x, yc + a, zc - a)], "#2b2b2b", `stroke="#000" stroke-width=".5"`);
+        out.push(`<circle cx="${c[0]}" cy="${c[1]}" r="${rt * .45}" fill="#555"/><circle cx="${c[0]}" cy="${c[1]}" r="${rt * .2}" fill="${ACC}"/>`);
+      } else {
+        out.push(`<circle cx="${c[0]}" cy="${c[1]}" r="${rt * .55}" fill="#3a3a3a"/><circle cx="${c[0]}" cy="${c[1]}" r="${rt * .28}" fill="#9aa0a6"/><circle cx="${c[0]}" cy="${c[1]}" r="${rt * .1}" fill="#222"/>`);
+      }
+    } else if (motorHere) {
+      const c = P(x, yc + rt * 1.25, zc + rt * .4);
+      out.push(`<circle cx="${c[0]}" cy="${c[1]}" r="${Math.max(1.5, 3 * e)}" fill="#111"/>`);
+    }
+  };
+  capFace(-capGap, true, hasMotor && side === "L");
+  capFace(fw + capGap + tc, false, hasMotor && side === "R");
+  for (const [from, to] of [[fw + 4, fw + capGap - 4], [-4, -capGap + 4]]) {
+    const a = P(from, bh / 2, Dp / 2), b = P(to, bh / 2, Dp / 2);
+    out.push(`<line x1="${a[0]}" y1="${a[1]}" x2="${b[0]}" y2="${b[1]}" stroke="#444" stroke-width=".8" stroke-dasharray="3 2.5" marker-end="url(#${id}arG)"/>`);
   }
-  const capLbl = P(x1 + capOff, bh + 8, D / 2);
-  out.push(`<text x="${capLbl[0]}" y="${capLbl[1]}" font-size="10" fill="#555" text-anchor="middle">YAN KAPAK</text>`);
+  for (const x of [-capGap - tc / 2, fw + capGap + tc / 2]) {
+    const q = [P(x, 0, Dp / 2)[0], P(x, 0, Dp)[1] - 7];
+    ext(q[0] - 26, q[1] - 10);
+    out.push(`<text x="${q[0]}" y="${q[1]}" font-size="9" fill="#3d3a35" text-anchor="middle" letter-spacing=".04em" font-weight="600">YAN KAPAK</text>`);
+  }
+
+  // kablo
+  if (hasMotor) {
+    const hx = side === "R" ? fw : 0, dir = side === "R" ? 1 : -1;
+    const h0 = P(hx, yc + rt * .5, zc + rt * .3), r0 = P(hx + dir * 3, bh + 34, Dp - 4 * e);
+    out.push(`<path d="M${h0[0]} ${h0[1]}C${h0[0] + dir * 14} ${h0[1] + 4} ${r0[0]} ${r0[1] - 30} ${r0[0]} ${r0[1]}" stroke="#111" stroke-width="2" fill="none" stroke-linecap="round"/>`);
+  }
 
   // motor etiketi
   if (hasMotor) {
-    const ly = P(0, 0, D)[1] - 30; ext(motorAnchor[0] - 64, ly - 16); ext(motorAnchor[0] + 64, ly);
-    out.push(`<path d="M${motorAnchor[0]} ${motorAnchor[1]}L${motorAnchor[0]} ${ly + 6}" stroke="#e0761c" stroke-width="1.6"/>
-      <circle cx="${motorAnchor[0]}" cy="${motorAnchor[1]}" r="3" fill="#e0761c"/>
-      <rect x="${motorAnchor[0] - 62}" y="${ly - 14}" width="124" height="22" rx="3" fill="#e0761c"/>
-      <text x="${motorAnchor[0]}" y="${ly + 1}" text-anchor="middle" font-size="12.5" font-weight="700" fill="#fff">MOTOR — ${side === "R" ? "SAĞ" : "SOL"}</text>`);
+    const ly = P(0, 0, Dp)[1] - 26;
+    const lx = Math.min(Math.max(motorAnchor[0], bb[0] + 70), bb[2] - 70);
+    ext(lx - 66, ly - 16); ext(lx + 66, ly);
+    out.push(`<path d="M${motorAnchor[0]} ${motorAnchor[1]}L${motorAnchor[0]} ${ly + 8}" stroke="${ACC}" stroke-width="1.6"/>
+      <circle cx="${motorAnchor[0]}" cy="${motorAnchor[1]}" r="3.2" fill="${ACC}" stroke="#fff" stroke-width="1"/>
+      <rect x="${lx - 64}" y="${ly - 14}" width="128" height="22" rx="11" fill="${ACC}"/>
+      <text x="${lx}" y="${ly + 1.5}" text-anchor="middle" font-size="12.5" font-weight="700" fill="#fff" letter-spacing=".04em">MOTOR — ${side === "R" ? "SAĞ" : "SOL"}</text>`);
   } else {
-    const c = P(fw / 2, -50, D);
+    const c = P(fw / 2, -22, Dp);
     out.push(`<text x="${c[0]}" y="${c[1]}" text-anchor="middle" font-size="12" font-weight="700" fill="#c0392b">MOTORSUZ</text>`);
   }
 
-  // ölçüler
-  const dimY = bot + 34, a = P(0, bot, rz0), b = P(fw, bot, rz0);
-  out.push(`<g stroke="#1d1f21" stroke-width=".8">
-    <line x1="${a[0]}" y1="${bot + y0 - rz0 * DY + 4}" x2="${a[0]}" y2="${a[1] + 38}"/>
-    <line x1="${b[0]}" y1="${bot + y0 - rz0 * DY + 4}" x2="${b[0]}" y2="${b[1] + 38}"/>
-    <line x1="${a[0]}" y1="${a[1] + 32}" x2="${b[0]}" y2="${b[1] + 32}" marker-start="url(#${id}ar)" marker-end="url(#${id}ar)"/></g>
-    <rect x="${(a[0] + b[0]) / 2 - 34}" y="${a[1] + 23}" width="68" height="18" fill="#fff"/>
-    <text x="${(a[0] + b[0]) / 2}" y="${a[1] + 37}" text-anchor="middle" font-size="15" font-weight="700">${esc(W)}</text>`);
-  const t = P(0, 0, 0), bt = P(0, bot, rz0), hx = Math.min(t[0], bt[0]) - 34;
-  out.push(`<g stroke="#1d1f21" stroke-width=".8">
-    <line x1="${t[0] - 4}" y1="${t[1]}" x2="${hx - 6}" y2="${t[1]}"/>
-    <line x1="${bt[0] - 4}" y1="${bt[1]}" x2="${hx - 6}" y2="${bt[1]}"/>
+  // ---------- ölçüler ----------
+  const a = P(0, bot, zr0), b = P(fw, bot, zr0), dy = a[1] + 30;
+  out.push(`<g stroke="${DIM}" stroke-width=".8">
+    <line x1="${a[0]}" y1="${a[1] + 6}" x2="${a[0]}" y2="${dy + 6}"/><line x1="${b[0]}" y1="${b[1] + 6}" x2="${b[0]}" y2="${dy + 6}"/>
+    <line x1="${a[0]}" y1="${dy}" x2="${b[0]}" y2="${dy}" marker-start="url(#${id}ar)" marker-end="url(#${id}ar)"/></g>
+    <rect x="${(a[0] + b[0]) / 2 - 32}" y="${dy - 10}" width="64" height="20" fill="#fff"/>
+    <text x="${(a[0] + b[0]) / 2}" y="${dy + 5.5}" text-anchor="middle" font-size="15" font-weight="700" fill="${DIM}">${esc(W)}</text>`);
+  ext(a[0], dy + 22);
+  const t = P(0, 0, 0), bt = P(0, bot, zr0), hx = bb[0] - 18;
+  out.push(`<g stroke="${DIM}" stroke-width=".8">
+    <line x1="${t[0] - 4}" y1="${t[1]}" x2="${hx - 6}" y2="${t[1]}"/><line x1="${bt[0] - 4}" y1="${bt[1]}" x2="${hx - 6}" y2="${bt[1]}"/>
     <line x1="${hx}" y1="${t[1]}" x2="${hx}" y2="${bt[1]}" marker-start="url(#${id}ar)" marker-end="url(#${id}ar)"/></g>
-    <rect x="${hx - 10}" y="${(t[1] + bt[1]) / 2 - 34}" width="20" height="68" fill="#fff"/>
-    <text transform="translate(${hx + 5} ${(t[1] + bt[1]) / 2}) rotate(-90)" text-anchor="middle" font-size="15" font-weight="700">${esc(H)}</text>`);
+    <rect x="${hx - 10}" y="${(t[1] + bt[1]) / 2 - 32}" width="20" height="64" fill="#fff"/>
+    <text transform="translate(${hx + 5.5} ${(t[1] + bt[1]) / 2}) rotate(-90)" text-anchor="middle" font-size="15" font-weight="700" fill="${DIM}">${esc(H)}</text>`);
+  ext(hx - 12, t[1]);
 
-
-  ext(hx - 14, a[1] + 44);
-  // viewBox'ı içeriğe göre ayarla
-  const m = 12, vb = [bb[0] - m, bb[1] - m, bb[2] - bb[0] + 2 * m, bb[3] - bb[1] + 2 * m + 16];
-  out.push(`<text x="${bb[0]}" y="${bb[3] + 18}" font-size="10" fill="#777">Dıştan görünüş · ölçüler mm (imalat) · kutu kesitli, kapaklar açık · ölçeksiz</text>`);
-  return `<svg viewBox="${vb.map(v => v.toFixed(0)).join(" ")}" xmlns="http://www.w3.org/2000/svg" font-family="Segoe UI, Arial">${out.join("")}</svg>`;
+  // ---------- sahne: taş kaplama cephe duvarı + önde taş döşeme zemin ----------
+  const m = 12, vb = [bb[0] - m, bb[1] - m - 6, bb[2] - bb[0] + 2 * m, bb[3] - bb[1] + 2 * m + 6 + 14];
+  const sx0 = vb[0], sx1 = vb[0] + vb[2], sy0 = vb[1], sy1 = vb[1] + vb[3] - 14;
+  const Q = (x, y, z) => [x + z * DX, y - z * DY];                 // bb'yi etkilemeyen izdüşüm
+  const yW = Q(0, bot, Dp)[1];                                     // duvar–zemin birleşim çizgisi
+  const zNear = (bot - sy1) / DY;                                  // zeminin görünen ön kenarı
+  const S = [];
+  S.push(`<clipPath id="${id}sc"><rect x="${sx0}" y="${sy0}" width="${vb[2]}" height="${sy1 - sy0}"/></clipPath><g clip-path="url(#${id}sc)">`);
+  // duvar
+  S.push(`<rect x="${sx0}" y="${sy0}" width="${vb[2]}" height="${yW - sy0}" fill="url(#${id}wallG)"/>`);
+  { // plaka derzleri (≈600×1200 mm, şaşırtmalı)
+    const pw = Math.max(600 * s, 46), ph = Math.max(1200 * s, 92), d = [];
+    for (let r = 0, y = yW; y > sy0 - ph; r++, y -= ph) {
+      d.push(`M${sx0} ${y.toFixed(1)}H${sx1}`);
+      for (let x = Q(0, 0, Dp)[0] - (r % 2) * pw / 2 - pw * 20; x < sx1; x += pw) if (x > sx0) d.push(`M${x.toFixed(1)} ${Math.max(y - ph, sy0).toFixed(1)}V${y.toFixed(1)}`);
+    }
+    S.push(`<path d="${d.join("")}" stroke="#cdbfa9" stroke-width="1.1"/><path d="${d.join("")}" stroke="#fffaf0" stroke-width=".6" stroke-opacity=".6" transform="translate(1 1)"/>`);
+  }
+  S.push(`<rect x="${sx0}" y="${sy0}" width="${vb[2]}" height="${yW - sy0}" filter="url(#${id}grain)" opacity=".5"/>`);
+  // ağaç gölgesi lekeleri
+  S.push(`<g filter="url(#${id}blurL)" fill="#5a4a35" opacity=".09">${[[.08, .1, 38, 16], [.2, .04, 26, 12], [.05, .3, 22, 30], [.9, .08, 34, 14], [.97, .28, 20, 26], [.15, .55, 30, 12]]
+    .map(([fx, fy, rx, ry]) => `<ellipse cx="${(sx0 + fx * vb[2]).toFixed(1)}" cy="${(sy0 + fy * (yW - sy0)).toFixed(1)}" rx="${rx}" ry="${ry}" transform="rotate(-25 ${(sx0 + fx * vb[2]).toFixed(1)} ${(sy0 + fy * (yW - sy0)).toFixed(1)})"/>`).join("")}</g>`);
+  // süpürgelik gölgesi
+  S.push(`<rect x="${sx0}" y="${yW - 10}" width="${vb[2]}" height="10" fill="url(#${id}wallFoot)"/>`);
+  // zemin
+  S.push(`<rect x="${sx0}" y="${yW}" width="${vb[2]}" height="${sy1 - yW}" fill="url(#${id}floorG)"/>`);
+  { const t = Math.max(600 * s, 42), d = [];
+    for (let z = Dp - t * 0.35; z > zNear; z -= t * 0.6) d.push(`M${sx0} ${Q(0, bot, z)[1].toFixed(1)}H${sx1}`);
+    const xs = sx0 - Dp * DX, xe = sx1 - zNear * DX;
+    for (let x = Math.floor(xs / t) * t; x < xe; x += t) { const a = Q(x, bot, Dp), b = Q(x, bot, zNear); d.push(`M${a[0].toFixed(1)} ${a[1].toFixed(1)}L${b[0].toFixed(1)} ${b[1].toFixed(1)}`); }
+    S.push(`<path d="${d.join("")}" stroke="#c9b9a2" stroke-width=".9"/>`);
+    S.push(`<rect x="${sx0}" y="${yW}" width="${vb[2]}" height="${sy1 - yW}" filter="url(#${id}grain)" opacity=".4"/>`); }
+  S.push(`<line x1="${sx0}" y1="${yW}" x2="${sx1}" y2="${yW}" stroke="#b8a68c" stroke-width="1"/>`);
+  // kenarlarda sayfaya yumuşak geçiş
+  S.push(`<rect x="${sx0}" y="${sy0}" width="${vb[2]}" height="${sy1 - sy0}" fill="url(#${id}vig)"/></g>`);
+  out.push(`<text x="${bb[0]}" y="${bb[3] + 18}" font-size="9.5" fill="#777">Dıştan görünüş · ölçüler mm (imalat) · kutu ön yüzü kesitli, yan kapaklar sökülü · ölçeksiz</text>`);
+  return `<svg viewBox="${vb.map(v => v.toFixed(0)).join(" ")}" xmlns="http://www.w3.org/2000/svg" font-family="Segoe UI, Arial"><defs>${defs.join("")}</defs>${S.join("")}${out.join("")}</svg>`;
 }
 function capIcon(kind, fill) {
-  const pts = profile(kind).map(([z, y]) => [2 + z * 30, 2 + y * 26]);
-  return `<svg width="34" height="30" style="vertical-align:middle"><polygon points="${ptsStr(pts)}" fill="${fill}" stroke="#1d1f21" stroke-width="1"/></svg>`;
+  const sec = sectionOf(kind), k = 30 / Math.max(sec.w, sec.h);
+  const pts = sec.outline.map(([x, y]) => [2 + x * k, 2 + y * k]);
+  return `<svg width="34" height="34" style="vertical-align:middle"><polygon points="${ptsStr(pts)}" fill="${fill}" stroke="#1d1f21" stroke-width=".6"/></svg>`;
 }
-function shade(hex, amt) {
-  const n = parseInt(hex.slice(1), 16), f = c => Math.max(0, Math.min(255, Math.round(c * (1 - amt))));
-  return "#" + [n >> 16, (n >> 8) & 255, n & 255].map(f).map(c => c.toString(16).padStart(2, "0")).join("");
-}
-function shadeFill(fill, pc, amt) { return fill.startsWith("#") ? shade(fill, amt) : fill; }
 
 // ---------- Sayfa ----------
 let DATA = null;
@@ -362,15 +623,21 @@ function render() {
   const { head, pozlar } = DATA;
   const pages = document.getElementById("pages");
   pages.innerHTML = "";
-  const perPage = 2;
+  const perPage = 2, total = Math.ceil(pozlar.length / perPage);
+  const meta = [["Ürün", "ZİP PERDE"], ["Proje no", head.no], ["Tarih", head.tarih], ["Teklif veren", head.veren], ["Proje ismi", head.proje], ["Müşteri", head.firma]];
   for (let pg = 0; pg < pozlar.length; pg += perPage) {
     const page = document.createElement("div");
     page.className = "page";
     page.innerHTML = `
-      <div class="head"><div class="logo-z">ZIPLINE</div><div class="t">POZ ÇİZİMLERİ</div><div class="logo-f">FERRINI</div></div>
-      <div class="meta"><div>ÜRÜN</div><div>PROJE NO</div><div>TARİH</div><div>TEKLİF VEREN</div><div>PROJE İSMİ</div><div>MÜŞTERİ</div>
-        <div>ZİP PERDE</div><div>${esc(head.no)}</div><div>${esc(head.tarih)}</div><div>${esc(head.veren)}</div><div>${esc(head.proje)}</div><div>${esc(head.firma)}</div></div>`;
+      <div class="head"><div class="logo-z"><img src="assets/logo-zipline.png" alt="Zipline"></div>
+        <div class="t"><b>POZ ÇİZİMLERİ</b><span>${esc(head.no)}${head.tarih ? " · " + esc(head.tarih) : ""}</span></div>
+        <div class="logo-f"><img src="assets/logo-ferrini.png" alt="Ferrini"></div></div>
+      <div class="meta">${meta.map(([k, v]) => `<div><div class="k">${k}</div><div class="v" title="${esc(v)}">${esc(v) || "—"}</div></div>`).join("")}</div>`;
     pozlar.slice(pg, pg + perPage).forEach((p, j) => page.appendChild(pozCard(p, pg + j)));
+    const foot = document.createElement("div");
+    foot.className = "foot";
+    foot.innerHTML = `<span>Ferrini · Zipline® Neo zip perde sistemleri</span><span>Sayfa ${pg / perPage + 1} / ${total}</span>`;
+    page.appendChild(foot);
     pages.appendChild(page);
   }
   document.getElementById("pdf").disabled = false;
@@ -381,32 +648,35 @@ function pozCard(p, i) {
   const el = document.createElement("div");
   el.className = "poz";
   const pc = profileColor(p.renk), fc = fabricColor(p.kumas, p.kumasRenk);
-  const side = motorSide(p.motorYon);
-  const yonTxt = p.motorYon ? `${esc(p.motorYon)} <small>(çizimde ${side === "R" ? "sağ" : "sol"})</small>`
-                            : `<span class="warn">Belirtilmemiş</span> — çizimde ${(p.forceSide || "R") === "R" ? "sağ" : "sol"}`;
+  const side = motorSide(p.motorYon) || p.forceSide || "R";
+  const hasMotor = !String(p.motor).toUpperCase().includes("MOTORSUZ");
+  const yonTxt = p.motorYon ? `${esc(p.motorYon)}<br><small>çizimde <span class="motor">${side === "R" ? "SAĞ" : "SOL"}</span></small>`
+                            : `<span class="warn">Belirtilmemiş</span><br><small>çizimde <span class="motor">${side === "R" ? "SAĞ" : "SOL"}</span> varsayıldı</small>`;
   const kum = p.imKumanda || (p.kumanda ? `${p.kumandaAdet || 1} ADET ${p.kumanda}` : "");
   const row = (k, v) => v ? `<div><div class="k">${k}</div><div class="v">${v}</div></div>` : "";
   el.innerHTML = `
     <div class="poz-h"><span class="no">POZ ${esc(p.no)}</span><span class="sys">${esc(p.sys)}</span><span class="adet">${esc(p.adet)} ADET</span></div>
     <div class="poz-b">${drawPoz(p, i)}
       <div class="spec">
+        ${row("İmalat ölçüsü (G × Y)", `<span class="big">${esc(p.iw)} × ${esc(p.ih)}</span> <small>mm</small>`)}
+        ${row("Sipariş ölçüsü", `${esc(p.w)} × ${esc(p.h)} <small>${esc(p.olcu)}</small>`)}
         ${row("Kapak tipi", `${capIcon(p.kapak, pc.wood ? pc.wood[0] : pc.hex)} ${KAPAK[p.kapak]}`)}
-        ${row("İmalat ölçüsü (G × Y)", `${esc(p.iw)} × ${esc(p.ih)} mm`)}
-        ${row("Sipariş ölçüsü", `${esc(p.w)} × ${esc(p.h)} ${esc(p.olcu)}`)}
         ${row("Profil rengi", `<span class="sw" style="background:${pc.wood ? pc.wood[0] : pc.hex}"></span>${esc(p.renk) || '<span class="warn">Belirtilmemiş</span>'}${p.boya ? ` <small>· ${esc(p.boya)}</small>` : ""}`)}
-        ${row("Kumaş", `<span class="sw" style="background:${fc}"></span>${esc(p.kumas)}${p.kumasRenk ? " · " + esc(p.kumasRenk) : ""}`)}
+        ${row("Kumaş", `<span class="sw" style="background:${fc}"></span>${esc(p.kumas)}${p.kumasRenk ? ` <small>· ${esc(p.kumasRenk)}</small>` : ""}`)}
         ${row("Motor", esc(p.motor))}
-        ${row("Motor yönü", yonTxt)}
+        ${hasMotor ? row("Motor yönü", yonTxt) : ""}
         ${row("Kumanda", esc(kum))}
         ${row("Baskı / logo", esc(p.baski))}
         ${row("Müşteri poz no", esc(p.musPoz))}
       </div>
     </div>
-    <div class="ctrl">Motor yönü:
-      <select data-k="motorYon">${["", ...MOTOR_DIRS].map(d => `<option ${d === p.motorYon ? "selected" : ""} value="${d}">${d || "— Excel'de yok —"}</option>`).join("")}</select>
-      Kapak: <select data-k="kapak">${Object.entries(KAPAK).map(([k, v]) => `<option ${k === p.kapak ? "selected" : ""} value="${k}">${v}</option>`).join("")}</select>
-      <span style="color:#a0640f">(sadece ekranda görünür)</span></div>`;
+    <div class="ctrl">
+      <label class="f"><span>Motor yönü</span>
+        <select data-k="motorYon">${["", ...MOTOR_DIRS].map(d => `<option ${d === p.motorYon ? "selected" : ""} value="${d}">${d || "— Excel'de yok —"}</option>`).join("")}</select></label>
+      <div class="f"><span>Kapak</span><div class="seg">${Object.entries(KAPAK).map(([k, v]) => `<button type="button" data-kapak="${k}" class="${k === p.kapak ? "on" : ""}">${v}</button>`).join("")}</div></div>
+      <span class="note">Düzeltmeler yalnızca bu çıktıya uygulanır</span></div>`;
   el.querySelectorAll("select").forEach(s => s.onchange = () => { p[s.dataset.k] = s.value; render(); });
+  el.querySelectorAll("[data-kapak]").forEach(b => b.onclick = () => { p.kapak = b.dataset.kapak; render(); });
   return el;
 }
 

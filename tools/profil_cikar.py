@@ -25,15 +25,22 @@ for name in ["sharp", "soft", "wave"]:
     slot = max(gaps, key=lambda g: g[1] - g[0])
     closed = mask.copy()
     cv2.line(closed, (x0 + slot[0] - 4, y1 - int(1.2 * pxmm)), (x0 + slot[1] + 4, y1 - int(1.2 * pxmm)), 255, int(2 * pxmm))
+    # gerçek ince cidarlı kesit (yarık açık, iç boşluk dahil tek kontur)
+    sc, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
+    sc = max(sc, key=cv2.contourArea)
+    sc = cv2.approxPolyDP(sc, 0.12 * pxmm, True)[:, 0, :]
+    section = [[round((x - x0) / pxmm, 2), round((y - y0) / pxmm, 2)] for x, y in sc]
     cnts, _ = cv2.findContours(closed, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
     c = max(cnts, key=cv2.contourArea)
     c = cv2.approxPolyDP(c, 0.25 * pxmm, True)[:, 0, :]
     pts = [[round((x - x0) / pxmm, 2), round((y - y0) / pxmm, 2)] for x, y in c]
-    out[name] = {"w": round((x1 - x0) / pxmm, 1), "h": 110, "outline": pts,
+    out[name] = {"w": round((x1 - x0) / pxmm, 1), "h": 110, "outline": pts, "section": section,
                  "slot": [round(slot[0] / pxmm, 1), round(slot[1] / pxmm, 1)]}
     # şeffaf PNG: profil gövdesi
     rgba = np.dstack([img, np.where(gray < 245, 255, 0).astype(np.uint8)])[y0 - 8:y1 + 8, x0 - 8:x1 + 8]
     rgba = cv2.resize(rgba, None, fx=0.35, fy=0.35, interpolation=cv2.INTER_AREA)
     Image.fromarray(rgba).save(root / "assets" / f"kesit-{name}.png")   # cv2.imwrite Türkçe yolda sessizce başarısız
-    print(name, out[name]["w"], len(pts), "slot", out[name]["slot"])
+    print(name, out[name]["w"], len(pts), len(section), "slot", out[name]["slot"])
 (root / "assets" / "profiller.json").write_text(json.dumps(out), encoding="utf-8")
+# HTML'in file:// altında da okuyabilmesi için JS olarak da yaz
+(root / "assets" / "profiller.js").write_text("window.PROFILLER = " + json.dumps(out) + ";\n", encoding="utf-8")
