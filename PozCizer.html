@@ -239,10 +239,11 @@ const norm = s => String(s ?? "").toLocaleUpperCase("tr").replace(/[İ]/g, "I").
 function systemInfo(sys, boxHint) {
   const s = norm(sys);
   const m = s.match(/\b(105|110|130|170)\b/);
-  const box = +boxHint || (m ? +m[1] : 110);
+  const ceiling = s.includes("SKY") || s.includes("TAVAN");
+  const box = +boxHint || (m ? +m[1] : ceiling ? 170 : 110);
   let kapak = s.includes("WAWE") || s.includes("WAVE") ? "wave" : s.includes("ROUND") ? "round" : s.includes("SOFT") ? "soft" : "sharp";
   if (kapak === "sharp" && box === 130) kapak = "sharp130";
-  return { kapak, box, manual: /_MNL\b/.test(s), ceiling: s.includes("SKY") || s.includes("TAVAN"),
+  return { kapak, box, manual: /_MNL\b/.test(s), ceiling,
            fabricOnly: s.includes("SABIT") && s.includes("KUMAS") };
 }
 const kapakOf = sys => systemInfo(sys).kapak;
@@ -294,17 +295,17 @@ const I18N = {
     pozOf: (a, b) => `${a}/${b} poz`, no4poz: "4POZ yok",
     endCap: "YAN KAPAK", motor: "MOTOR", manual: "MANUEL", motorless: "MOTORSUZ", R: "SAĞ", L: "SOL",
     caption: "Dıştan görünüş · ölçüler mm (imalat) · kutu ön yüzü kesitli, yan kapaklar sökülü · ölçeksiz",
+    skyCaption: "Tavan sistemi, üstten görünüş · ölçüler mm (imalat) · sağ/sol: kumaş ucundan kutuya bakış · ölçeksiz",
     iMotorDir: "motor yönü belirtilmemiş (sağ varsayıldı)", iMotorType: "motor tipi belirtilmemiş",
     iColorNone: "profil rengi belirtilmemiş", iColorUnknown: c => `“${c}” rengi tanınmadı (gri gösterildi)`,
     iNoImalat: "4POZ'da imalat ölçüsü yok (sipariş ölçüsü kullanıldı)", iSize: "ölçü eksik",
-    iCeiling: "tavan sistemi: çizim dikey sistem üzerinden temsilîdir",
     iCrankDir: "manivela yönü belirtilmemiş (sağ varsayıldı)", iDup: "poz numarası tekrar ediyor (4POZ ölçüsü karışabilir)",
     iXlsError: "Excel'de hata hücresi var (#N/A, #REF! …); değer yok sayıldı",
     issuesOk: "<b>Kontrol tamam</b> — tüm pozlar Excel verisinden eksiksiz çizildi.",
     issuesHead: n => `Kontrol edilmesi gerekenler (${n})`,
     issuesNote: "Motor yönü ve kapak tipini poz kartlarının altındaki alandan düzeltebilirsiniz. Bu kutu PDF'e basılmaz.",
     mProduct: "Ürün", mNo: "Proje no", mDate: "Tarih", mBy: "Teklif veren", mName: "Proje ismi", mCust: "Müşteri",
-    product: "ZİP PERDE", docTitle: "POZ ÇİZİMLERİ", fileTitle: "Poz Çizimleri", project: "Proje",
+    product: "ZİP PERDE", docTitle: "POZ ÇİZİMLERİ", fileTitle: "pozçizimi", project: "Proje",
     poz: "Poz", POZ: "POZ", pcs: "ADET", printMark: "BASKI / LOGO", footer: "Ferrini · Zipline® zip perde sistemleri", page: (n, t) => `Sayfa ${n} / ${t}`,
     info: (no, n, a) => `${no} · ${n} poz · ${a} adet`,
     fabricOnly: "Bu poz yalnızca <b>sabit sistem için kumaş</b> siparişidir;<br>kutu/dikme çizimi yoktur.",
@@ -313,7 +314,7 @@ const I18N = {
     rRemote: "Kumanda", rPrint: "Baskı / logo", rCustPoz: "Müşteri poz no", rNote: "Not", cover: "Kapak",
     inDrawing: "çizimde", assumed: "varsayıldı", notSet: "Belirtilmemiş", unrecognised: "(tanınmadı)", approx: "(yaklaşık ton)",
     manualCrank: "MANUEL (manivelalı)", orderSizeUsed: "sipariş ölçüsü", box: "kutu",
-    ceilingNote: "Tavan sistemi — çizim temsilîdir", notInExcel: "— Excel'de yok —", ctrlNote: "Düzeltmeler PDF çıktısına da yansır",
+    notInExcel: "— Excel'de yok —", ctrlNote: "Düzeltmeler PDF çıktısına da yansır",
     dirs: { "DIŞTAN BAKIŞ SAĞ": "DIŞTAN BAKIŞ SAĞ", "DIŞTAN BAKIŞ SOL": "DIŞTAN BAKIŞ SOL", "İÇTEN BAKIŞ SAĞ": "İÇTEN BAKIŞ SAĞ", "İÇTEN BAKIŞ SOL": "İÇTEN BAKIŞ SOL" },
   },
   en: {
@@ -330,17 +331,17 @@ const I18N = {
     pozOf: (a, b) => `${a}/${b} pos.`, no4poz: "no 4POZ",
     endCap: "END CAP", motor: "MOTOR", manual: "MANUAL", motorless: "NO MOTOR", R: "RIGHT", L: "LEFT",
     caption: "Outside view · dimensions in mm (production) · box front cut away, end caps removed · not to scale",
+    skyCaption: "Ceiling system, top view · dimensions in mm (production) · right/left: looking from the fabric end toward the box · not to scale",
     iMotorDir: "motor side not specified (right assumed)", iMotorType: "motor type not specified",
     iColorNone: "profile colour not specified", iColorUnknown: c => `colour “${c}” not recognised (shown grey)`,
     iNoImalat: "no production size in 4POZ (order size used)", iSize: "size missing",
-    iCeiling: "ceiling system: drawing shown as a vertical system (indicative)",
     iCrankDir: "crank side not specified (right assumed)", iDup: "position number is repeated (4POZ sizes may be mixed up)",
     iXlsError: "Excel error cell (#N/A, #REF! …); value ignored",
     issuesOk: "<b>All checks passed</b> — every position was drawn from complete Excel data.",
     issuesHead: n => `Items to check (${n})`,
     issuesNote: "You can correct the motor side and cover type below each position card. This box is not printed.",
     mProduct: "Product", mNo: "Project no", mDate: "Date", mBy: "Prepared by", mName: "Project name", mCust: "Customer",
-    product: "ZIP SCREEN", docTitle: "POSITION DRAWINGS", fileTitle: "Position Drawings", project: "Project",
+    product: "ZIP SCREEN", docTitle: "POSITION DRAWINGS", fileTitle: "position-drawings", project: "Project",
     poz: "Pos.", POZ: "POS", pcs: "PCS", printMark: "PRINT / LOGO", footer: "Ferrini · Zipline® zip screen systems", page: (n, t) => `Page ${n} / ${t}`,
     info: (no, n, a) => `${no} · ${n} positions · ${a} pcs`,
     fabricOnly: "This position is a <b>fabric-only order for a fixed system</b>;<br>there is no box/rail drawing.",
@@ -349,7 +350,7 @@ const I18N = {
     rRemote: "Remote control", rPrint: "Print / logo", rCustPoz: "Customer pos. no", rNote: "Note", cover: "Cover",
     inDrawing: "in drawing", assumed: "assumed", notSet: "Not specified", unrecognised: "(not recognised)", approx: "(approx. shade)",
     manualCrank: "MANUAL (crank)", orderSizeUsed: "order size", box: "box",
-    ceilingNote: "Ceiling system — drawing is indicative", notInExcel: "— not in Excel —", ctrlNote: "Corrections also apply to the PDF",
+    notInExcel: "— not in Excel —", ctrlNote: "Corrections also apply to the PDF",
     dirs: { "DIŞTAN BAKIŞ SAĞ": "OUTSIDE VIEW RIGHT", "DIŞTAN BAKIŞ SOL": "OUTSIDE VIEW LEFT", "İÇTEN BAKIŞ SAĞ": "INSIDE VIEW RIGHT", "İÇTEN BAKIŞ SOL": "INSIDE VIEW LEFT" },
   },
 };
@@ -485,6 +486,7 @@ function sectionOf(kapak, box) {
 }
 
 function drawPoz(p, i) {
+  if (p.ceiling) return drawSky(p, i);                 // tavan sistemi: ayrı, yatay çizim
   const W = +p.iw || 1000, H = +p.ih || 1000;
   // Sabit oranlı çizim: her poz aynı kalıpta çizilir, gerçek ölçüler yalnızca etiketlerde yazar
   const s = 0.13;                                   // doku/derz ölçeği için temsilî mm→px
@@ -863,6 +865,167 @@ function drawPoz(p, i) {
   out.push(`<text x="${bb[0]}" y="${bb[3] + 18}" font-size="9.5" fill="#777">${T().caption}</text>`);
   return `<svg viewBox="${vb.map(v => v.toFixed(0)).join(" ")}" xmlns="http://www.w3.org/2000/svg" font-family="Segoe UI, Arial"><defs>${defs.join("")}</defs>${S.join("")}${out.join("")}</svg>`;
 }
+// ---------- Zipline Sky (tavan) ----------
+// Yatay sistem, üstten-önden bakış; kutu kapalı (tavanda kapak çeşidi yok), motor tarafı vurgulanır. Dünya ekseni: u = kumaşın açılma yönü (sağa), v = kutu ekseni / genişlik
+// (geriye doğru), h = yukarı. Arka plan yok (yalnız ürün). Motor tarafı: kumaş ucundan kutuya bakışla sağ/sol.
+const SKY_U = [1, 0.22], SKY_V = [0.62, -0.44];
+const SKY_D = [-0.62, 1, -0.576];                    // izdüşüm doğrultusu: n·d < 0 olan yüz görünür
+function drawSky(p, i) {
+  const t = T(), id = "s" + i;
+  const e = 0.55, L = 330, Wd = 300;                 // sabit oranlı: açılma boyu ve genişlik
+  const Bd = 170 * .42, bh = 150 * .42;              // kutu: 170 × 150 mm kesit, sabit ölçek
+  const rwv = 34 * e, rh = 46 * e;                   // yan ray genişliği / yüksekliği
+  const ed = 38 * e, eh = 50 * e;                    // uç profil
+  const fH = rh * 0.62;                              // kumaş düzlemi
+  const pc = profileColor(p.renk), fc = fabricColor(p.kumas, p.kumasRenk), fk = fabricKind(p.kumas);
+  const base = pc.hex;
+  const hasMotor = !isMotorless(p);
+  const side = motorSide(p.motorYon) || p.forceSide || "R";
+  const bb = [1e9, 1e9, -1e9, -1e9];
+  const ext = (x, y) => { bb[0] = Math.min(bb[0], x); bb[1] = Math.min(bb[1], y); bb[2] = Math.max(bb[2], x); bb[3] = Math.max(bb[3], y); };
+  const S = (u, v, h) => { const q = [u * SKY_U[0] + v * SKY_V[0], u * SKY_U[1] + v * SKY_V[1] - h]; ext(q[0], q[1]); return q; };
+  const out = [], defs = [];
+  const poly = (pts, fill, extra = "") => out.push(`<polygon points="${ptsStr(pts)}" fill="${fill}" ${extra}/>`);
+  // dünya normali → ışık uzayı (x, aşağı, duvara doğru)
+  const lit = (col, n, gloss) => litHex(col, nrm([n[0], -n[2], n[1]]), gloss);
+  const visible = n => n[0] * SKY_D[0] + n[1] * SKY_D[1] + n[2] * SKY_D[2] < -1e-3;
+  const face = (pts, n, opt = {}) => {
+    if (opt.cull !== false && !visible(n)) return;
+    const col = opt.color || base;
+    if (pc.wood && !opt.color) {
+      poly(pts, `url(#${id}wood)`);
+      const { f } = light(nrm([n[0], -n[2], n[1]]));
+      poly(pts, f < 1 ? "#000" : "#fff", `fill-opacity="${(f < 1 ? (1 - f) * .9 : (f - 1) * .8).toFixed(3)}"`);
+    } else { const c = lit(col, n, opt.gloss); poly(pts, c, `stroke="${c}" stroke-width=".6" stroke-linejoin="round"`); }
+  };
+  // dik kutu: üst, ön (-v), sağ (+u) yüzler (görünürlük normalden)
+  const cuboid = (u0, u1, v0, v1, h0, h1, opt = {}) => {
+    face([S(u0, v0, h1), S(u1, v0, h1), S(u1, v1, h1), S(u0, v1, h1)], [0, 0, 1], opt);
+    face([S(u0, v0, h0), S(u1, v0, h0), S(u1, v0, h1), S(u0, v0, h1)], [0, -1, 0], opt);
+    face([S(u1, v0, h0), S(u1, v1, h0), S(u1, v1, h1), S(u1, v0, h1)], [1, 0, 0], opt);
+    face([S(u0, v0, h0), S(u0, v1, h0), S(u0, v1, h1), S(u0, v0, h1)], [-1, 0, 0], opt);
+  };
+
+  // ---------- defs ----------
+  const meshDark = shade(fc, 0.28), meshLight = tint(fc, 0.18);
+  defs.push(`
+    <pattern id="${id}mesh" width="2.4" height="2.4" patternUnits="userSpaceOnUse">
+      <rect width="2.4" height="2.4" fill="${fc}"/>
+      ${fk === "mesh" ? `<path d="M0 .6H2.4M0 1.8H2.4" stroke="${meshDark}" stroke-width=".55"/><path d="M.6 0V2.4M1.8 0V2.4" stroke="${meshLight}" stroke-width=".45" stroke-opacity=".7"/>` : ""}
+      ${fk === "solid" ? `<path d="M0 1.2H2.4" stroke="${meshDark}" stroke-width=".25" stroke-opacity=".5"/>` : ""}
+    </pattern>
+    <linearGradient id="${id}fLight" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#fff" stop-opacity=".22"/><stop offset=".5" stop-color="#fff" stop-opacity="0"/>
+      <stop offset="1" stop-color="#000" stop-opacity=".18"/></linearGradient>
+    <filter id="${id}blur" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="5"/></filter>
+    <marker id="${id}ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0 0L10 5L0 10z" fill="${DIM}"/></marker>
+    <marker id="${id}arG" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M0 0L10 5L0 10z" fill="#444"/></marker>`);
+  if (pc.wood) {
+    const [w0, w1] = pc.wood, wl = tint(w0, .22);
+    defs.push(`<linearGradient id="${id}wood" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="4.4" y2="6.2" spreadMethod="repeat">${
+      [[0, w0], [.12, w1], [.18, w0], [.38, wl], [.46, w0], [.6, w1], [.64, w0], [.82, wl], [.9, w1], [1, w0]].map(([o, c]) => `<stop offset="${o}" stop-color="${c}"/>`).join("")}</linearGradient>`);
+  }
+  // ---------- zemine düşen hafif gölge (arka plan değil; ürünü oturtur) ----------
+  out.push(`<g filter="url(#${id}blur)" opacity=".18">`);
+  poly([S(-Bd, 0, -40 * e), S(L + ed, 0, -40 * e), S(L + ed, Wd, -40 * e), S(-Bd, Wd, -40 * e)].map(([x, y]) => [x + 10, y + 12]), "#000");
+  out.push(`</g>`);
+
+  // ---------- uzak ray (v = Wd tarafı) ----------
+  cuboid(0, L, Wd - rwv, Wd, 0, rh);
+  // ---------- kumaş ----------
+  const fab = [S(0, rwv * .5, fH), S(L, rwv * .5, fH), S(L, Wd - rwv * .5, fH), S(0, Wd - rwv * .5, fH)];
+  if (fk === "clear") poly(fab, "#cfe0e8", `fill-opacity=".55"`); else poly(fab, `url(#${id}mesh)`);
+  poly(fab, `url(#${id}fLight)`);
+  if (!blank(p.baski)) {
+    const c = S(L / 2, Wd / 2, fH);
+    out.push(`<text transform="translate(${c[0].toFixed(1)} ${c[1].toFixed(1)}) rotate(12.4) skewX(-28)" text-anchor="middle" font-size="13" font-weight="700" fill="#fff" fill-opacity=".9" letter-spacing=".12em">${t.printMark}</text>`);
+  }
+  // ---------- uç profil (kumaşın vardığı taraf) ----------
+  cuboid(L, L + ed, 0, Wd, 0, eh);
+  face([S(L, 0, eh * .55), S(L + ed * .2, 0, eh * .55), S(L + ed * .2, Wd, eh * .55), S(L, Wd, eh * .55)], [0, 0, 1], { color: "#1d1d1d", cull: false });
+
+  // ---------- kutu (u: -Bd..0) ----------
+  // Sky kesiti (170 × 150 mm): dış yüz dik, kumaş tarafının üst köşesi pahlı (üstte 93 mm düz, yanda 62 mm iniş).
+  const sec = [[-Bd, 0], [0, 0], [0, bh * (1 - 62 / 150)], [-Bd * (1 - 93 / 170), bh], [-Bd, bh]];   // (u, h), saat yönü tersi
+  const strips = sec.map((a, k) => { const b = sec[(k + 1) % sec.length]; return { a, b, n: nrm([b[1] - a[1], 0, -(b[0] - a[0])]) }; });
+  const quad = (st, v0, v1) => [S(st.a[0], v0, st.a[1]), S(st.a[0], v1, st.a[1]), S(st.b[0], v1, st.b[1]), S(st.b[0], v0, st.b[1])];
+  // Tavan sisteminde kapak çeşidi yok ve içi gösterilmez: kutu kapalı çizilir, yalnız motor tarafı işaretlenir.
+  for (const st of strips) if (visible(st.n)) face(quad(st, 0, Wd), st.n);
+  const ridge = strips.find(st => st.n[2] > .9 && st.n[0] === 0) || strips[3];
+  const ra = S(ridge.a[0], 0, ridge.a[1]), rb = S(ridge.a[0], Wd, ridge.a[1]);
+  out.push(`<line x1="${ra[0]}" y1="${ra[1]}" x2="${rb[0]}" y2="${rb[1]}" stroke="#fff" stroke-opacity=".35" stroke-width=".8"/>`);
+  // kasa yan kapağı: profilden hafif taşan kapalı kapak, kenarda kabartma çerçeve, üstünde FERRINI
+  const tc = 4 * e, cc = [-Bd * .5, bh * .5];
+  const grow = (k, d = 0) => sec.map(([u, h]) => [cc[0] + (u - cc[0]) * k, cc[1] + (h - cc[1]) * k + d]);
+  const capSec = grow(1.025);
+  const capStrips = capSec.map((a, k) => { const b = capSec[(k + 1) % capSec.length]; return { a, b, n: nrm([b[1] - a[1], 0, -(b[0] - a[0])]) }; });
+  const capCol = shade(base, .12);
+  for (const st of capStrips) if (visible(st.n)) face(quad(st, -tc, 0), st.n, { color: pc.wood ? null : capCol });
+  const endCap = capSec.map(([u, h]) => S(u, -tc, h));
+  face(endCap, [0, -1, 0], { color: pc.wood ? null : capCol });
+  out.push(`<polygon points="${ptsStr(grow(.88).map(([u, h]) => S(u, -tc, h)))}" fill="none" stroke="#000" stroke-opacity=".28" stroke-width=".9" stroke-linejoin="round"/>
+    <polygon points="${ptsStr(grow(.88).map(([u, h]) => S(u, -tc, h)).map(([x, y]) => [x + .7, y + .7]))}" fill="none" stroke="#fff" stroke-opacity=".18" stroke-width=".7" stroke-linejoin="round"/>`);
+  { const o = S(-Bd * .48, -tc, bh * .2);
+    out.push(`<text transform="matrix(${SKY_U[0]} ${SKY_U[1]} 0 1 ${o[0].toFixed(1)} ${o[1].toFixed(1)})" text-anchor="middle" font-size="${(7.5 * e / .55).toFixed(1)}" font-weight="700" letter-spacing=".18em" fill="#000" fill-opacity=".32">FERRINI</text>`); }
+  // motorun bulunduğu uç: kutunun o bölümü vurgulanır
+  const zone = 105, near = side === "L";
+  const zv0 = near ? 0 : Wd - zone, zv1 = near ? zone : Wd;
+  let anchor = null;
+  if (hasMotor || p.manual) {
+    const col = hasMotor ? ACC : "#5c6166";
+    for (const st of strips) if (visible(st.n))
+      poly(quad(st, zv0, zv1), col, `fill-opacity="${st.n[2] > .3 ? .42 : .3}" stroke="${col}" stroke-width="1" stroke-linejoin="round"`);
+    if (near) poly(endCap, col, `fill-opacity=".3" stroke="${col}" stroke-width="1"`);
+    anchor = S(-Bd * .72, (zv0 + zv1) / 2, bh);
+  }
+
+  // ---------- yakın ray (v = 0) + montaj ayakları ----------
+  for (const fu of [.16, .84]) {
+    const u0 = L * fu - 9 * e, u1 = L * fu + 9 * e;
+    cuboid(u0, u1, rwv * .3, rwv * .7, -26 * e, 0, { color: "#8a8f94" });
+    cuboid(u0 - 5 * e, u1 + 5 * e, rwv * .1, rwv * .9, -30 * e, -26 * e, { color: "#6f747a" });
+  }
+  cuboid(0, L, 0, rwv, 0, rh);
+  const g0 = S(0, rwv * .82, rh), g1 = S(L, rwv * .82, rh);          // ray üstünde fermuar kanalı
+  out.push(`<line x1="${g0[0]}" y1="${g0[1]}" x2="${g1[0]}" y2="${g1[1]}" stroke="#151515" stroke-width="1.6"/>`);
+
+  // ---------- motor / manuel etiketi ----------
+  const tag = (anchor, text, fill) => {
+    const ly = bb[1] - 18, lx = anchor[0];
+    ext(lx - 70, ly - 16); ext(lx + 70, ly);
+    out.push(`<path d="M${anchor[0]} ${anchor[1]}L${anchor[0]} ${ly + 8}" stroke="${fill}" stroke-width="1.6"/>
+      <circle cx="${anchor[0]}" cy="${anchor[1]}" r="3.2" fill="${fill}" stroke="#fff" stroke-width="1"/>
+      <rect x="${lx - 68}" y="${ly - 14}" width="136" height="22" rx="11" fill="${fill}"/>
+      <text x="${lx}" y="${ly + 1.5}" text-anchor="middle" font-size="12" font-weight="700" fill="#fff" letter-spacing=".04em">${text}</text>`);
+  };
+  if (hasMotor) tag(anchor, `${t.motor} — ${t[side]}`, ACC);
+  else if (p.manual) tag(anchor, `${t.manual} — ${t[side]}`, "#5c6166");
+  else { const c = S(-Bd / 2, Wd / 2, bh + 30); out.push(`<text x="${c[0]}" y="${c[1]}" text-anchor="middle" font-size="12" font-weight="700" fill="#c0392b">${t.motorless}</text>`); }
+
+  // ---------- ölçüler ----------
+  const dimLine = (a, b, label, ang) => {
+    const m = [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2];
+    out.push(`<line x1="${a[0]}" y1="${a[1]}" x2="${b[0]}" y2="${b[1]}" stroke="${DIM}" stroke-width=".8" marker-start="url(#${id}ar)" marker-end="url(#${id}ar)"/>
+      <g transform="translate(${m[0].toFixed(1)} ${m[1].toFixed(1)}) rotate(${ang})"><rect x="-30" y="-10" width="60" height="20" fill="#fff"/>
+      <text y="5.5" text-anchor="middle" font-size="15" font-weight="700" fill="${DIM}">${esc(label)}</text></g>`);
+  };
+  const ext1 = (p0, p1) => out.push(`<line x1="${p0[0]}" y1="${p0[1]}" x2="${p1[0]}" y2="${p1[1]}" stroke="${DIM}" stroke-width=".6"/>`);
+  // genişlik: kutu ekseni boyunca, uç profilin dışında
+  const wu = L + ed + 34;
+  ext1(S(L + ed + 4, 0, 0), S(wu + 6, 0, 0)); ext1(S(L + ed + 4, Wd, 0), S(wu + 6, Wd, 0));
+  dimLine(S(wu, 0, 0), S(wu, Wd, 0), p.iw || "?", -35.4);
+  // açılma (yükseklik): uzak kenar boyunca
+  const hv = Wd + 34;
+  ext1(S(0, Wd + 4, rh), S(0, hv + 6, rh)); ext1(S(L, Wd + 4, rh), S(L, hv + 6, rh));
+  dimLine(S(0, hv, rh), S(L, hv, rh), p.ih || "?", 12.4);
+
+  const m = 12, vb = [bb[0] - m, bb[1] - m, bb[2] - bb[0] + 2 * m, bb[3] - bb[1] + 2 * m + 16];
+  out.push(`<text x="${bb[0]}" y="${bb[3] + 20}" font-size="9.5" fill="#777">${t.skyCaption}</text>`);
+  return `<svg viewBox="${vb.map(v => v.toFixed(0)).join(" ")}" xmlns="http://www.w3.org/2000/svg" font-family="Segoe UI, Arial"><defs>${defs.join("")}</defs>${out.join("")}</svg>`;
+}
+
 function capIcon(kind, fill, box) {
   const sec = sectionOf(kind, box), k = 30 / Math.max(sec.w, sec.h);
   const pts = sec.outline.map(([x, y]) => [2 + x * k, 2 + y * k]);
@@ -887,7 +1050,6 @@ function pozIssues(p) {
   else if (pc.unknown) out.push(t.iColorUnknown(p.renk));
   if (p.imalatYok && (p.iw || p.ih)) out.push(t.iNoImalat);
   if (!p.iw || !p.ih) out.push(t.iSize);
-  if (p.ceiling) out.push(t.iCeiling);
   return out;
 }
 function pageHead(head) {
@@ -935,7 +1097,9 @@ async function build(onPoz) {
   document.getElementById("pdf").disabled = false;
   const adet = pozlar.reduce((s, p) => s + (+p.adet || 1), 0);
   document.getElementById("info").textContent = t.info(head.no || t.project, pozlar.length, adet);
-  document.title = `${head.no || t.project} ${t.fileTitle}`;
+  // Tarayıcı PDF'e sayfa başlığını dosya adı olarak verir: projeno_müşteri_pozçizimi
+  const fn = v => String(v ?? "").trim().replace(/[\\/:*?"<>|]+/g, "").replace(/\s+/g, "-");
+  document.title = [fn(head.no) || fn(t.project), fn(head.firma), t.fileTitle].filter(Boolean).join("_");
 }
 // Kart içi düzeltmelerde / dil değişiminde yeniden çiz; kaydırma konumunu koru
 function render() { const y = scrollY; build().then(() => scrollTo(0, y)); }
@@ -970,7 +1134,7 @@ function pozCard(p, i) {
       <div class="spec">
         ${row(t.rProdSize, `<span class="big">${p.iw ? esc(p.iw) : "?"} × ${p.ih ? esc(p.ih) : "?"}</span> <small>mm${p.imalatYok ? " · " + t.orderSizeUsed : ""}</small>`)}
         ${row(t.rOrderSize, `${p.w ? esc(p.w) : "?"} × ${p.h ? esc(p.h) : "?"} <small>${dv(p.olcu, VAL_EN.concat(OLCU_EN))}</small>`)}
-        ${row(t.rCover, `${capIcon(p.kapak, pc.hex, p.box)} ${KAPAK[p.kapak]}${p.box && p.box !== 110 && p.kapak !== "sharp130" ? ` <small>· ${p.box} ${t.box}</small>` : ""}`)}
+        ${p.ceiling ? "" : row(t.rCover, `${capIcon(p.kapak, pc.hex, p.box)} ${KAPAK[p.kapak]}${p.box && p.box !== 110 && p.kapak !== "sharp130" ? ` <small>· ${p.box} ${t.box}</small>` : ""}`)}
         ${row(t.rColor, `<span class="sw" style="${swatch}"></span>${renkTxt}${p.boya ? ` <small>· ${dv(p.boya)}</small>` : ""}`)}
         ${fabricRow(fc)}
         ${row(p.manual ? t.rDrive : t.rMotor, motorTxt)}
@@ -978,13 +1142,12 @@ function pozCard(p, i) {
         ${row(t.rRemote, dv(kum))}
         ${row(t.rPrint, dv(p.baski))}
         ${row(t.rCustPoz, esc(p.musPoz))}
-        ${p.ceiling ? row(t.rNote, `<span class="warn">${t.ceilingNote}</span>`) : ""}
       </div>
     </div>
     <div class="ctrl">
       <label class="f"><span>${p.manual ? t.rCrankSide : t.rMotorSide}</span>
         <select data-k="motorYon">${["", ...MOTOR_DIRS].map(d => `<option ${d === p.motorYon ? "selected" : ""} value="${d}">${d ? t.dirs[d] : t.notInExcel}</option>`).join("")}</select></label>
-      <div class="f"><span>${t.cover}</span><div class="seg">${Object.entries(KAPAK).map(([k, v]) => `<button type="button" data-kapak="${k}" class="${k === p.kapak ? "on" : ""}">${v}</button>`).join("")}</div></div>
+      ${p.ceiling ? "" : `<div class="f"><span>${t.cover}</span><div class="seg">${Object.entries(KAPAK).map(([k, v]) => `<button type="button" data-kapak="${k}" class="${k === p.kapak ? "on" : ""}">${v}</button>`).join("")}</div></div>`}
       <span class="note">${t.ctrlNote}</span></div>`;
   el.querySelectorAll("select").forEach(s => s.onchange = () => { p[s.dataset.k] = s.value; render(); });
   el.querySelectorAll("[data-kapak]").forEach(b => b.onclick = () => {
