@@ -218,7 +218,7 @@ const FABRIC_COLORS = [
   ["HAVANABROWN","#5a4535"],["BRONZE","#6b5a45"],["TAUPE","#8f8273"],["BRICK","#9c4a35"],["DEEPRED","#7d1f24"],["RED","#b02a2e"],
   ["DEEPBLUE","#23365e"],["BLUE","#2b3f6b"],["MOSSGREEN","#5b6b3a"],["TENISGREEN","#3f7a45"],["ANISEED","#a7a46a"],["GREEN","#4a6b3a"],
   ["BUTTERCUP","#e6c25a"],["ORANGE","#d46a1f"],["GOLD","#b8963e"],["COPPER","#9a5b38"],["LOGAAN","#6f6a5c"],
-  ["BEIGE","#d8c8a8"],["GREY","#8c8c8c"],["WHITE","#f2f2ee"],["ALU","#b9bcbf"] ];
+  ["BLACK","#1c1c1c"],["BEIGE","#d8c8a8"],["GREY","#8c8c8c"],["WHITE","#f2f2ee"],["ALU","#b9bcbf"] ];
 const FABRIC_DEFAULT = { SCREEN:"#2e2e2f", COPACO:"#8c8c8c", SOLTIS:"#9a9a95", BLACOUT:"#e9e9e6", BLACKOUT:"#e9e9e6", SEFFAF:"#dbe8ee", OPAK:"#ededea" };
 const MOTOR_DIRS = ["DIŞTAN BAKIŞ SAĞ","DIŞTAN BAKIŞ SOL","İÇTEN BAKIŞ SAĞ","İÇTEN BAKIŞ SOL"];
 const KAPAK = { soft:"Soft", sharp:"Sharp", wave:"Wave", sharp130:"130 Sharp", round:"Round" };
@@ -226,7 +226,7 @@ const KAPAK = { soft:"Soft", sharp:"Sharp", wave:"Wave", sharp130:"130 Sharp", r
 // ---------- Yardımcılar ----------
 const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;" }[c]));
 const blank = v => v === undefined || v === null || v === "" || v === 0 || v === "0" || (typeof v === "string" && (v.trim() === "" || v.startsWith("#")));
-const val = v => blank(v) ? "" : (typeof v === "string" ? v.trim() : v);
+const val = v => v instanceof Date ? v.toLocaleDateString("tr-TR") : blank(v) ? "" : (typeof v === "string" ? v.trim() : v);
 // Türkçe büyük harf + aksan sadeleştirme: "Altınmeşe", "ALTINMEŞE", "WHİTE" hepsi aynı anahtara iner
 const norm = s => String(s ?? "").toLocaleUpperCase("tr").replace(/[İ]/g, "I").replace(/Ş/g, "S").replace(/Ğ/g, "G")
   .replace(/Ü/g, "U").replace(/Ö/g, "O").replace(/Ç/g, "C").replace(/\s+/g, " ").trim();
@@ -245,13 +245,13 @@ const kapakOf = sys => systemInfo(sys).kapak;
 function profileColor(c) {
   const s = norm(c);
   for (const k in WOOD) if (s.includes(k)) return { wood: WOOD[k], hex: WOOD[k][0] };
-  const m = s.match(/\b(\d{4})\b/);
+  const m = s.match(/(?<!\d)(\d{4})(?!\d)/);              // "RAL 9016" ve "RAL9016"
   if (m && RAL[m[1]]) return { hex: RAL[m[1]] };
   for (const [k, h] of SPECIAL_COLORS) if (s.includes(k)) return { hex: h, approx: true };
   return { hex: "#7d8287", unknown: !!s };
 }
 function fabricColor(type, code) {
-  const s = norm(code);
+  const s = norm(code).replace(/\s+/g, "");                 // "PEARL GREY" = "PEARLGREY"
   for (const [k, h] of FABRIC_COLORS) if (s.includes(k)) return h;
   const t = norm(type);
   for (const k in FABRIC_DEFAULT) if (t.includes(k)) return FABRIC_DEFAULT[k];
@@ -271,6 +271,8 @@ function motorSide(dir) {
   return s.includes("ICTEN") ? (right ? "L" : "R") : (right ? "R" : "L");
 }
 const isMotorless = p => p.manual || norm(p.motor).includes("MOTORSUZ");
+// Excel'deki yön yazımını ("Dıştan bakış sağ", fazla boşluk) seçim kutusunun sabitine indirger
+const canonDir = v => MOTOR_DIRS.find(d => norm(d) === norm(v)) || v;
 
 // ---------- Dil (TR / EN) ----------
 const I18N = {
@@ -292,12 +294,14 @@ const I18N = {
     iColorNone: "profil rengi belirtilmemiş", iColorUnknown: c => `“${c}” rengi tanınmadı (gri gösterildi)`,
     iNoImalat: "4POZ'da imalat ölçüsü yok (sipariş ölçüsü kullanıldı)", iSize: "ölçü eksik",
     iCeiling: "tavan sistemi: çizim dikey sistem üzerinden temsilîdir",
+    iCrankDir: "manivela yönü belirtilmemiş (sağ varsayıldı)", iDup: "poz numarası tekrar ediyor (4POZ ölçüsü karışabilir)",
+    iXlsError: "Excel'de hata hücresi var (#N/A, #REF! …); değer yok sayıldı",
     issuesOk: "<b>Kontrol tamam</b> — tüm pozlar Excel verisinden eksiksiz çizildi.",
     issuesHead: n => `Kontrol edilmesi gerekenler (${n})`,
     issuesNote: "Motor yönü ve kapak tipini poz kartlarının altındaki alandan düzeltebilirsiniz. Bu kutu PDF'e basılmaz.",
     mProduct: "Ürün", mNo: "Proje no", mDate: "Tarih", mBy: "Teklif veren", mName: "Proje ismi", mCust: "Müşteri",
     product: "ZİP PERDE", docTitle: "POZ ÇİZİMLERİ", fileTitle: "Poz Çizimleri", project: "Proje",
-    poz: "Poz", POZ: "POZ", pcs: "ADET", footer: "Ferrini · Zipline® zip perde sistemleri", page: (n, t) => `Sayfa ${n} / ${t}`,
+    poz: "Poz", POZ: "POZ", pcs: "ADET", printMark: "BASKI / LOGO", footer: "Ferrini · Zipline® zip perde sistemleri", page: (n, t) => `Sayfa ${n} / ${t}`,
     info: (no, n, a) => `${no} · ${n} poz · ${a} adet`,
     fabricOnly: "Bu poz yalnızca <b>sabit sistem için kumaş</b> siparişidir;<br>kutu/dikme çizimi yoktur.",
     rFabricSize: "Kumaş ölçüsü (G × Y)", rProdSize: "İmalat ölçüsü (G × Y)", rOrderSize: "Sipariş ölçüsü", rCover: "Kapak tipi",
@@ -326,12 +330,14 @@ const I18N = {
     iColorNone: "profile colour not specified", iColorUnknown: c => `colour “${c}” not recognised (shown grey)`,
     iNoImalat: "no production size in 4POZ (order size used)", iSize: "size missing",
     iCeiling: "ceiling system: drawing shown as a vertical system (indicative)",
+    iCrankDir: "crank side not specified (right assumed)", iDup: "position number is repeated (4POZ sizes may be mixed up)",
+    iXlsError: "Excel error cell (#N/A, #REF! …); value ignored",
     issuesOk: "<b>All checks passed</b> — every position was drawn from complete Excel data.",
     issuesHead: n => `Items to check (${n})`,
     issuesNote: "You can correct the motor side and cover type below each position card. This box is not printed.",
     mProduct: "Product", mNo: "Project no", mDate: "Date", mBy: "Prepared by", mName: "Project name", mCust: "Customer",
     product: "ZIP SCREEN", docTitle: "POSITION DRAWINGS", fileTitle: "Position Drawings", project: "Project",
-    poz: "Pos.", POZ: "POS", pcs: "PCS", footer: "Ferrini · Zipline® zip screen systems", page: (n, t) => `Page ${n} / ${t}`,
+    poz: "Pos.", POZ: "POS", pcs: "PCS", printMark: "PRINT / LOGO", footer: "Ferrini · Zipline® zip screen systems", page: (n, t) => `Page ${n} / ${t}`,
     info: (no, n, a) => `${no} · ${n} positions · ${a} pcs`,
     fabricOnly: "This position is a <b>fabric-only order for a fixed system</b>;<br>there is no box/rail drawing.",
     rFabricSize: "Fabric size (W × H)", rProdSize: "Production size (W × H)", rOrderSize: "Order size", rCover: "Cover type",
@@ -348,7 +354,7 @@ try { if (localStorage.getItem("pozcizer.lang") === "en") LANG = "en"; } catch (
 const T = () => I18N[LANG];
 // Excel'den gelen Türkçe değerlerin İngilizce karşılıkları (yalnızca EN'de; ürün kodları olduğu gibi kalır)
 const VAL_EN = [
-  [/DIŞTAN BAKIŞ/g, "OUTSIDE VIEW"], [/İÇTEN BAKIŞ/g, "INSIDE VIEW"], [/\bSAĞ\b/g, "RIGHT"], [/\bSOL\b/g, "LEFT"],
+  [/DIŞTAN BAKIŞ/g, "OUTSIDE VIEW"], [/İÇTEN BAKIŞ/g, "INSIDE VIEW"], [/(?<![\p{L}\d])SAĞ(?![\p{L}\d])/gu, "RIGHT"], [/\bSOL\b/g, "LEFT"],
   [/\(Dikey\)/gi, "(Vertical)"], [/\(Tavan\)/gi, "(Ceiling)"], [/_MNL\b/g, " (Manual)"], [/SABİT İÇİN KUMAŞ/g, "FABRIC FOR FIXED SYSTEM"],
   [/\(Bitmiş\)/gi, "(Finished)"],
   [/MOTORSUZ/g, "NO MOTOR"], [/ALICILI/g, "WITH RECEIVER"], [/KISA MOTOR/g, "SHORT MOTOR"], [/\bALICI\b/g, "RECEIVER"], [/\bDÜZ\b/g, "WIRED"],
@@ -384,13 +390,17 @@ function setLang(l) {
 function readWorkbook(wb) {
   const sh = wb.Sheets["1PROJE"], pz = wb.Sheets["4POZ"];
   if (!sh) throw new Error(T().errNo1);
-  const c = (s, a) => s && s[a] ? s[a].v : undefined;
+  // Hata hücresi (#N/A, #REF!…) SheetJS'te sayısal hata kodudur (#N/A = 42): değer sayılmaz.
+  let xlsErrors = 0;
+  const c = (s, a) => { const x = s && s[a]; if (!x) return undefined; if (x.t === "e") { xlsErrors++; return undefined; } return x.v; };
+  // Sayfanın dolu son satırı: sabit üst sınır, büyük projede pozları sessizce kesiyordu.
+  const lastRow = s => s && s["!ref"] ? XLSX.utils.decode_range(s["!ref"]).e.r + 1 : 0;
   const fmtDate = v => v instanceof Date ? v.toLocaleDateString("tr-TR") : val(v);
   const head = { tarih: fmtDate(c(sh,"B3")), il: val(c(sh,"C3")), veren: val(c(sh,"D3")), firma: val(c(sh,"E3")),
                  proje: val(c(sh,"F3")), no: val(c(sh,"G3")) };
   // 4POZ: 20 satırlık bloklar, iki sütun (B ve L)
   const imalat = {};
-  if (pz) for (let br = 9; br < 600; br += 20) for (const bc of [1, 11]) {
+  if (pz) for (let br = 9, end = lastRow(pz); br <= end; br += 20) for (const bc of [1, 11]) {
     const a = (dr, dc) => XLSX.utils.encode_cell({ r: br - 1 + dr, c: bc + dc });
     const no = c(pz, a(0, 1));
     if (blank(no) || blank(c(pz, a(0, 2)))) continue;
@@ -399,25 +409,30 @@ function readWorkbook(wb) {
   }
   const num = v => { const n = typeof v === "number" ? v : parseFloat(String(v ?? "").replace(",", ".")); return isFinite(n) && n > 0 ? Math.round(n) : 0; };
   const pozlar = [], uyarilar = [];
-  for (let r = 7; r <= 200; r++) {
+  for (let r = 7, end = lastRow(sh); r <= end; r++) {
     const g = col => c(sh, col + r);
     const sys = val(g("C"));
     if (blank(sys) || blank(g("B"))) continue;
     const no = g("B"), im = imalat[String(no).trim()];
     const info = systemInfo(sys, im && num(im.box));
     const w = num(g("E")), h = num(g("F"));
-    const iw = im && num(im.w) || w, ih = im && num(im.h) || h;
+    // İmalat ölçüsü ya ikisi birden 4POZ'dan ya hiç: yarısı imalat yarısı sipariş ölçüsü karışık basılıyordu.
+    const imOk = !!(im && num(im.w) && num(im.h));
+    const iw = imOk ? num(im.w) : w, ih = imOk ? num(im.h) : h;
     const p = {
       no, sys, adet: num(g("D")) || 1, w, h, olcu: val(g("G")), renk: val(g("H")),
-      kumas: val(g("I")), kumasRenk: val(g("K")), motor: val(g("L")), motorYon: val(g("M")) || (im && motorSide(im.yon) ? im.yon : ""),
+      kumas: val(g("I")), kumasRenk: val(g("K")), motor: val(g("L")), motorYon: canonDir(val(g("M")) || (im && motorSide(im.yon) ? im.yon : "")),
       kumanda: val(g("N")), kumandaAdet: val(g("O")), baski: val(g("P")), boya: val(g("R")), musPoz: val(g("T")),
-      iw, ih, imKumanda: im ? im.kumanda : "", imalatYok: !im || !num(im.w) || !num(im.h),
+      iw, ih, imKumanda: im ? im.kumanda : "", imalatYok: !imOk, boxXls: info.box,
       ...info
     };
     if (!iw || !ih) uyarilar.push(`Poz ${no}: ölçü eksik`);
     pozlar.push(p);
   }
-  return { head, pozlar, uyarilar, has4poz: !!pz };
+  const seen = {};
+  for (const p of pozlar) { const k = String(p.no).trim(); seen[k] = (seen[k] || 0) + 1; }
+  for (const p of pozlar) p.dup = seen[String(p.no).trim()] > 1;
+  return { head, pozlar, uyarilar, has4poz: !!pz, xlsErrors };
 }
 
 // ---------- Çizim ----------
@@ -459,7 +474,7 @@ function litHex(hex, n, gloss) {
 function sectionOf(kapak, box) {
   const key = kapak === "sharp130" ? "sharp" : kapak === "round" ? "soft" : kapak;
   const pr = (window.PROFILLER || {})[key] || window.PROFILLER.sharp;
-  const k = kapak === "sharp130" ? 130 / 110 : (box && box !== 130 ? Math.min(box, 130) / 110 : 1);
+  const k = kapak === "sharp130" ? 130 / 110 : (box ? Math.min(box, 130) / 110 : 1);
   const sc = a => a.map(([x, y]) => [x * k, y * k]);
   return { w: pr.w * k, h: pr.h * k, outline: sc(pr.outline), section: sc(pr.section),
            slot: pr.slot.map(v => v * k), screws: sc([[6.5, 7.5], [6.5, 102.5], [pr.w - 12, 7.5]]) };
@@ -587,7 +602,7 @@ function drawPoz(p, i) {
   poly(ft, `url(#${id}fTop)`);
   if (!blank(p.baski)) {
     const c = P(fw / 2, (bh + barY) / 2, zf);
-    out.push(`<text x="${c[0]}" y="${c[1]}" text-anchor="middle" font-size="13" font-weight="700" fill="#fff" fill-opacity=".9" letter-spacing=".12em">BASKI / LOGO</text>`);
+    out.push(`<text x="${c[0]}" y="${c[1]}" text-anchor="middle" font-size="13" font-weight="700" fill="#fff" fill-opacity=".9" letter-spacing=".12em">${T().printMark}</text>`);
   }
 
   // ---------- alt çıta (broşürdeki gibi yüksek, altta fırça) ----------
@@ -796,14 +811,14 @@ function drawPoz(p, i) {
     <line x1="${a[0]}" y1="${a[1] + 6}" x2="${a[0]}" y2="${dy + 6}"/><line x1="${b[0]}" y1="${b[1] + 6}" x2="${b[0]}" y2="${dy + 6}"/>
     <line x1="${a[0]}" y1="${dy}" x2="${b[0]}" y2="${dy}" marker-start="url(#${id}ar)" marker-end="url(#${id}ar)"/></g>
     <rect x="${(a[0] + b[0]) / 2 - 32}" y="${dy - 10}" width="64" height="20" fill="#fff"/>
-    <text x="${(a[0] + b[0]) / 2}" y="${dy + 5.5}" text-anchor="middle" font-size="15" font-weight="700" fill="${DIM}">${esc(W)}</text>`);
+    <text x="${(a[0] + b[0]) / 2}" y="${dy + 5.5}" text-anchor="middle" font-size="15" font-weight="700" fill="${DIM}">${esc(p.iw || "?")}</text>`);
   ext(a[0], dy + 22);
   const t = P(0, 0, 0), bt = P(0, bot, zr0), hx = bb[0] - 18;
   out.push(`<g stroke="${DIM}" stroke-width=".8">
     <line x1="${t[0] - 4}" y1="${t[1]}" x2="${hx - 6}" y2="${t[1]}"/><line x1="${bt[0] - 4}" y1="${bt[1]}" x2="${hx - 6}" y2="${bt[1]}"/>
     <line x1="${hx}" y1="${t[1]}" x2="${hx}" y2="${bt[1]}" marker-start="url(#${id}ar)" marker-end="url(#${id}ar)"/></g>
     <rect x="${hx - 10}" y="${(t[1] + bt[1]) / 2 - 32}" width="20" height="64" fill="#fff"/>
-    <text transform="translate(${hx + 5.5} ${(t[1] + bt[1]) / 2}) rotate(-90)" text-anchor="middle" font-size="15" font-weight="700" fill="${DIM}">${esc(H)}</text>`);
+    <text transform="translate(${hx + 5.5} ${(t[1] + bt[1]) / 2}) rotate(-90)" text-anchor="middle" font-size="15" font-weight="700" fill="${DIM}">${esc(p.ih || "?")}</text>`);
   ext(hx - 12, t[1]);
 
   // ---------- sahne: taş kaplama cephe duvarı + önde taş döşeme zemin ----------
@@ -858,9 +873,11 @@ const frame = () => new Promise(r => requestAnimationFrame(() => r()));
 
 // Excel'den gelen ama çizimde tahmin edilen / eksik kalan noktalar
 function pozIssues(p) {
-  if (p.fabricOnly) return [];
   const t = T(), out = [], pc = profileColor(p.renk);
+  if (p.dup) out.push(t.iDup);
+  if (p.fabricOnly) return (!p.iw || !p.ih) ? out.concat(t.iSize) : out;
   if (!isMotorless(p) && !motorSide(p.motorYon)) out.push(t.iMotorDir);
+  if (p.manual && !motorSide(p.motorYon)) out.push(t.iCrankDir);
   if (!isMotorless(p) && !p.motor) out.push(t.iMotorType);
   if (!p.renk) out.push(t.iColorNone);
   else if (pc.unknown) out.push(t.iColorUnknown(p.renk));
@@ -880,9 +897,10 @@ function pageHead(head) {
 function issuesBox(pozlar) {
   const t = T();
   const list = pozlar.map(p => [p, pozIssues(p)]).filter(([, l]) => l.length);
-  if (!list.length) return `<div class="issues ok">${t.issuesOk}</div>`;
-  return `<div class="issues"><b>${t.issuesHead(list.reduce((s, [, l]) => s + l.length, 0))}</b>
-    <ul>${list.map(([p, l]) => `<li><span>${t.poz} ${esc(p.no)}</span> ${l.map(esc).join(" · ")}</li>`).join("")}</ul>
+  const xe = DATA && DATA.xlsErrors ? 1 : 0;
+  if (!list.length && !xe) return `<div class="issues ok">${t.issuesOk}</div>`;
+  return `<div class="issues"><b>${t.issuesHead(list.reduce((s, [, l]) => s + l.length, 0) + xe)}</b>
+    <ul>${xe ? `<li>${esc(t.iXlsError)}</li>` : ""}${list.map(([p, l]) => `<li><span>${t.poz} ${esc(p.no)}</span> ${l.map(esc).join(" · ")}</li>`).join("")}</ul>
     <small>${t.issuesNote}</small></div>`;
 }
 // Tüm sayfaları üretir; onPoz verilirse her pozdan sonra ilerleme bildirilir (yükleme ekranı için)
@@ -928,7 +946,7 @@ function pozCard(p, i) {
   if (p.fabricOnly) {
     const fc = fabricColor(p.kumas, p.kumasRenk);
     el.innerHTML = `${headHtml}<div class="poz-b"><div class="nodraw"><div>${t.fabricOnly}</div></div>
-      <div class="spec">${row(t.rFabricSize, `<span class="big">${esc(p.iw)} × ${esc(p.ih)}</span> <small>mm</small>`)}
+      <div class="spec">${row(t.rFabricSize, `<span class="big">${p.iw ? esc(p.iw) : "?"} × ${p.ih ? esc(p.ih) : "?"}</span> <small>mm</small>`)}
         ${fabricRow(fc)}${row(t.rPrint, dv(p.baski))}${row(t.rCustPoz, esc(p.musPoz))}</div></div>`;
     return el;
   }
@@ -946,8 +964,8 @@ function pozCard(p, i) {
   el.innerHTML = `${headHtml}
     <div class="poz-b">${drawPoz(p, i)}
       <div class="spec">
-        ${row(t.rProdSize, `<span class="big">${esc(p.iw) || "?"} × ${esc(p.ih) || "?"}</span> <small>mm${p.imalatYok ? " · " + t.orderSizeUsed : ""}</small>`)}
-        ${row(t.rOrderSize, `${esc(p.w)} × ${esc(p.h)} <small>${dv(p.olcu, VAL_EN.concat(OLCU_EN))}</small>`)}
+        ${row(t.rProdSize, `<span class="big">${p.iw ? esc(p.iw) : "?"} × ${p.ih ? esc(p.ih) : "?"}</span> <small>mm${p.imalatYok ? " · " + t.orderSizeUsed : ""}</small>`)}
+        ${row(t.rOrderSize, `${p.w ? esc(p.w) : "?"} × ${p.h ? esc(p.h) : "?"} <small>${dv(p.olcu, VAL_EN.concat(OLCU_EN))}</small>`)}
         ${row(t.rCover, `${capIcon(p.kapak, pc.hex, p.box)} ${KAPAK[p.kapak]}${p.box && p.box !== 110 && p.kapak !== "sharp130" ? ` <small>· ${p.box} ${t.box}</small>` : ""}`)}
         ${row(t.rColor, `<span class="sw" style="${swatch}"></span>${renkTxt}${p.boya ? ` <small>· ${dv(p.boya)}</small>` : ""}`)}
         ${fabricRow(fc)}
@@ -966,8 +984,12 @@ function pozCard(p, i) {
       <span class="note">${t.ctrlNote}</span></div>`;
   el.querySelectorAll("select").forEach(s => s.onchange = () => { p[s.dataset.k] = s.value; render(); });
   el.querySelectorAll("[data-kapak]").forEach(b => b.onclick = () => {
+    const prev = p.kapak;
     p.kapak = b.dataset.kapak;
-    if (p.kapak === "sharp130") p.box = 130; else if (p.box === 130) p.box = 110;
+    // 130 Sharp kendi kutusunu getirir; ondan çıkarken Excel'deki ölçüye dönülür. Diğer
+    // kapaklar arasında geçiş kutu ölçüsüne dokunmaz (130'luk Soft kutu 110'a inmiyordu).
+    if (p.kapak === "sharp130") p.box = 130;
+    else if (prev === "sharp130") p.box = p.boxXls && p.boxXls !== 130 ? p.boxXls : 110;
     render();
   });
   return el;
@@ -1000,8 +1022,10 @@ async function load(file) {
     // yalnızca gereken 2 sayfa okunur; formül/stil/VBA atlanır (≈6 kat hızlı)
     const wb = XLSX.read(buf, { type: "array", cellDates: true, sheets: ["1PROJE", "4POZ"], cellFormula: false, cellHTML: false, cellText: false, cellStyles: false, bookVBA: false });
     step(1, `${(file.size / 1048576).toFixed(1)} MB`); setProgress(.18); await sleep(260);
-    DATA = readWorkbook(wb);
-    if (!DATA.pozlar.length) throw new Error(t.errNoPoz);
+    // Önce yerel değişkene: başarısız yüklemede bir önceki proje (ekranda duran) bozulmasın.
+    const next = readWorkbook(wb);
+    if (!next.pozlar.length) throw new Error(t.errNoPoz);
+    DATA = next;
     step(2, DATA.head.no ? String(DATA.head.no) : ""); setProgress(.32); await sleep(260);
     const imOk = DATA.pozlar.filter(p => !p.imalatYok).length;
     step(3, DATA.has4poz ? t.pozOf(imOk, DATA.pozlar.length) : t.no4poz); setProgress(.46); await sleep(260);
@@ -1010,7 +1034,7 @@ async function load(file) {
     await build(async (k, n) => {
       ov.querySelectorAll(".steps em")[4].textContent = `${k}/${n}`;
       setProgress(.55 + .43 * k / n);
-      await sleep(Math.max(40, 360 / n)); await frame();
+      await sleep(Math.min(Math.max(40, 360 / n), 1500 / n)); await frame();   // toplam ≤ 1,5 sn
     });
     step(5); setProgress(1);
     document.getElementById("drop").style.display = "none";
