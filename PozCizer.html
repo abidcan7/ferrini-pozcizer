@@ -134,6 +134,10 @@
            font-size:13px; opacity:0; pointer-events:none; transition:all .25s; z-index:60; box-shadow:0 8px 24px rgba(0,0,0,.25); }
   #toast.on { opacity:1; transform:translate(-50%, 0); }
 
+  /* dar ekranda A4 önizleme ekrana sığsın (yalnız ekran; baskı A4 kalır) */
+  @media screen and (max-width: 860px) { .page { zoom:.78; } .issues { width:auto; } }
+  @media screen and (max-width: 640px) { .page { zoom:.56; } #pages { padding:12px 8px 32px; } .bar { padding:8px 10px; } }
+  @media screen and (max-width: 440px) { .page { zoom:.46; } }
   @page { size:A4 portrait; margin:0; }
   @media print {
     body { background:#fff; }
