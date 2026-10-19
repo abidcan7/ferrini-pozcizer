@@ -1306,10 +1306,30 @@ document.getElementById("yeni").onclick = () => {
   applyStatic();
   scrollTo(0, 0);
 };
+// PDF dosya adı: tarayıcı, iframe'den yazdırırken adı ANA sayfanın başlığından alır (Atlas'ta
+// "Ferrini Atlas - …" çıkıyordu). Sandbox'lı belge üst başlığı değiştiremez; bu yüzden Atlas'tan
+// ister: {type:"pozcizer:print", title} → Atlas başlığı geçici olarak çevirir ve "print-ready" der
+// → yazdır → "print-done" ile Atlas eski başlığa döner. Cevap gelmezse (eski Atlas, başka bir
+// gömen sayfa) kısa beklemeden sonra yine yazdırılır; kendi sekmesinde doğrudan yazdırılır.
+function printWithName() {
+  if (window.parent === window) { window.print(); return; }
+  let done = false;
+  const go = () => {
+    if (done) return;
+    done = true;
+    removeEventListener("message", onMsg);
+    window.print();
+    try { window.parent.postMessage({ type: "pozcizer:print-done" }, "*"); } catch (e) {}
+  };
+  const onMsg = e => { if (e.source === window.parent && e.data && e.data.type === "pozcizer:print-ready") go(); };
+  addEventListener("message", onMsg);
+  try { window.parent.postMessage({ type: "pozcizer:print", title: document.title }, "*"); } catch (e) {}
+  setTimeout(go, 600);
+}
 document.getElementById("pdf").onclick = () => {
   const el = document.getElementById("toast");
   el.classList.add("on"); setTimeout(() => el.classList.remove("on"), 5000);
-  setTimeout(() => window.print(), 60);
+  setTimeout(printWithName, 60);
 };
 document.querySelectorAll(".lang button").forEach(b => b.onclick = () => setLang(b.dataset.lang));
 const drop = document.getElementById("drop");
