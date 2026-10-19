@@ -1083,9 +1083,11 @@ function drawSky(p, i) {
   ext1(S(L + ed + 4, 0, 0), S(wu + 6, 0, 0)); ext1(S(L + ed + 4, Wd, 0), S(wu + 6, Wd, 0));
   dimLine(S(wu, 0, 0), S(wu, Wd, 0), p.iw || "?", -35.4);
   // açılma (yükseklik): uzak kenar boyunca
-  const hv = Wd + 46;
-  ext1(S(0, Wd + 10, rh), S(0, hv + 6, rh)); ext1(S(LR, Wd + 10, rh), S(LR, hv + 6, rh));
-  dimLine(S(0, hv, rh), S(LR, hv, rh), p.ih || "?", 12.4);
+  // açılım: kutunun DIŞ yüzünden ray ucuna kadar (kutu dahil toplam ölçü); ön kenarda, yakın rayın
+  // önünde çizilir ki iki uç da görünsün (arka kenarda başlangıç kutunun arkasında kalıyordu)
+  const uEnd = LR + 2.5 * e, hv = -58;
+  ext1(S(-Bd, -4 * e - 4, 0), S(-Bd, hv - 6, 0)); ext1(S(uEnd, -4, 0), S(uEnd, hv - 6, 0));
+  dimLine(S(-Bd, hv, 0), S(uEnd, hv, 0), p.ih || "?", 12.4);
 
   const m = 12, vb = [bb[0] - m, bb[1] - m, bb[2] - bb[0] + 2 * m, bb[3] - bb[1] + 2 * m + 16];
   out.push(`<text x="${bb[0]}" y="${bb[3] + 20}" font-size="9.5" fill="#777">${t.skyCaption}</text>`);
