@@ -22,13 +22,14 @@
          padding:8px 16px; border-radius:8px; font:inherit; font-size:14px; font-weight:600; cursor:pointer; transition:background .15s, transform .15s; }
   .bar button:hover:not(:disabled), .bar label.btn:hover { background:#36a053; }
   .bar button:disabled { opacity:.45; cursor:default; }
-  .bar label.btn.ghost { background:rgba(255,255,255,.1); border:1px solid rgba(255,255,255,.18); }
-  .bar label.btn.ghost:hover { background:rgba(255,255,255,.18); }
+  .bar label.btn.ghost, .bar button.ghost { background:rgba(255,255,255,.1); border:1px solid rgba(255,255,255,.18); }
+  .bar button.ghost:hover:not(:disabled), .bar label.btn.ghost:hover { background:rgba(255,255,255,.18); }
   .bar svg { width:16px; height:16px; }
   .bar .lang { display:inline-flex; border:1px solid rgba(255,255,255,.22); border-radius:8px; overflow:hidden; }
   .bar .lang button { background:none; border:0; border-radius:0; padding:7px 10px; font-size:12.5px; font-weight:700; color:#b7c2cc; letter-spacing:.06em; }
   .bar .lang button:hover:not(.on) { background:rgba(255,255,255,.1); }
   .bar .lang button.on { background:#fff; color:var(--navy); }
+  .bar [hidden] { display:none !important; }
   .bar .info { color:#b7c2cc; font-size:13px; margin-left:auto; }
 
   /* yükleme alanı */
@@ -156,6 +157,7 @@
   <span class="brand"><i></i><span data-i18n="brand">ZİP POZ ÇİZER</span></span>
   <label class="btn ghost"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6M9 13l6 6M15 13l-6 6"/></svg><span data-i18n="open">Excel aç</span><input type="file" id="file" accept=".xlsm,.xlsx,.xls" hidden></label>
   <button id="pdf" disabled><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12M7 10l5 5 5-5M5 21h14"/></svg><span data-i18n="pdf">PDF kaydet</span></button>
+  <button id="yeni" class="ghost" hidden title=""><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg><span data-i18n="newProject">Yeni proje</span></button>
   <div class="lang" role="group" aria-label="Dil / Language"><button type="button" data-lang="tr">TR</button><button type="button" data-lang="en">EN</button></div>
   <span class="info" id="info">Proje Excel'ini (.xlsm) sürükleyin veya açın.</span>
 </div>
@@ -333,7 +335,8 @@ const canonDir = v => MOTOR_DIRS.find(d => norm(d) === norm(v)) || v;
 // ---------- Dil (TR / EN) ----------
 const I18N = {
   tr: {
-    appTitle: "Zip Poz Çizer", brand: "ZİP POZ ÇİZER", open: "Excel aç", pdf: "PDF kaydet",
+    appTitle: "Zip Poz Çizer", brand: "ZİP POZ ÇİZER", open: "Excel aç", pdf: "PDF kaydet", newProject: "Yeni proje",
+    newTitle: "Ekranı temizle, yeni proje Excel'i yükle", newConfirm: "Kartlarda yaptığınız düzeltmeler (motor yönü, kapak) kaybolacak. Ekran temizlensin mi?",
     infoIdle: "Proje Excel'ini (.xlsm) sürükleyin veya açın.",
     dropH: "Proje Excel dosyasını buraya bırakın", dropSub: "veya üstteki <b>Excel aç</b> düğmesini kullanın",
     chip1: "1PROJE → sipariş bilgileri", chip2: "4POZ → imalat ölçüleri", chip3: "Kapak · renk · kumaş · motor otomatik",
@@ -370,7 +373,8 @@ const I18N = {
     dirs: { "DIŞTAN BAKIŞ SAĞ": "DIŞTAN BAKIŞ SAĞ", "DIŞTAN BAKIŞ SOL": "DIŞTAN BAKIŞ SOL", "İÇTEN BAKIŞ SAĞ": "İÇTEN BAKIŞ SAĞ", "İÇTEN BAKIŞ SOL": "İÇTEN BAKIŞ SOL" },
   },
   en: {
-    appTitle: "Zip Position Drawer", brand: "ZIP POSITION DRAWER", open: "Open Excel", pdf: "Save PDF",
+    appTitle: "Zip Position Drawer", brand: "ZIP POSITION DRAWER", open: "Open Excel", pdf: "Save PDF", newProject: "New project",
+    newTitle: "Clear the screen and load a new project Excel", newConfirm: "Corrections made on the cards (motor side, cover) will be lost. Clear the screen?",
     infoIdle: "Drag in or open the project Excel (.xlsm).",
     dropH: "Drop the project Excel file here", dropSub: "or use the <b>Open Excel</b> button above",
     chip1: "1PROJE → order details", chip2: "4POZ → production sizes", chip3: "Cover · colour · fabric · motor detected automatically",
@@ -435,6 +439,7 @@ function applyStatic() {
   document.querySelectorAll("[data-i18n]").forEach(el => { el.innerHTML = t[el.dataset.i18n]; });
   document.body.dataset.drop = t.dropping;
   document.querySelectorAll(".lang button").forEach(b => b.classList.toggle("on", b.dataset.lang === LANG));
+  document.getElementById("yeni").title = t.newTitle;
   if (!DATA) { document.title = t.appTitle; document.getElementById("info").textContent = t.infoIdle; }
 }
 function setLang(l) {
@@ -1163,6 +1168,7 @@ async function build(onPoz) {
   pages.innerHTML = "";
   pages.appendChild(frag);
   document.getElementById("pdf").disabled = false;
+  document.getElementById("yeni").hidden = false;
   const adet = pozlar.reduce((s, p) => s + (+p.adet || 1), 0);
   document.getElementById("info").textContent = t.info(head.no || t.project, pozlar.length, adet);
   // Tarayıcı PDF'e sayfa başlığını dosya adı olarak verir: projeno_müşteri_pozçizimi
@@ -1218,10 +1224,10 @@ function pozCard(p, i) {
         <select data-k="motorYon">${["", ...MOTOR_DIRS].map(d => `<option ${d === p.motorYon ? "selected" : ""} value="${d}">${d ? t.dirs[d] : t.notInExcel}</option>`).join("")}</select></label>
       ${p.ceiling ? "" : `<div class="f"><span>${t.cover}</span><div class="seg">${Object.entries(KAPAK).map(([k, v]) => `<button type="button" data-kapak="${k}" class="${k === p.kapak ? "on" : ""}">${v}</button>`).join("")}</div></div>`}
       <span class="note">${t.ctrlNote}</span></div>`;
-  el.querySelectorAll("select").forEach(s => s.onchange = () => { p[s.dataset.k] = s.value; render(); });
+  el.querySelectorAll("select").forEach(s => s.onchange = () => { p[s.dataset.k] = s.value; EDITED = true; render(); });
   el.querySelectorAll("[data-kapak]").forEach(b => b.onclick = () => {
     const prev = p.kapak;
-    p.kapak = b.dataset.kapak;
+    p.kapak = b.dataset.kapak; EDITED = true;
     // 130 Sharp kendi kutusunu getirir; ondan çıkarken Excel'deki ölçüye dönülür. Diğer
     // kapaklar arasında geçiş kutu ölçüsüne dokunmaz (130'luk Soft kutu 110'a inmiyordu).
     if (p.kapak === "sharp130") p.box = 130;
@@ -1261,7 +1267,7 @@ async function load(file) {
     // Önce yerel değişkene: başarısız yüklemede bir önceki proje (ekranda duran) bozulmasın.
     const next = readWorkbook(wb);
     if (!next.pozlar.length) throw new Error(t.errNoPoz);
-    DATA = next;
+    DATA = next; EDITED = false;
     step(2, DATA.head.no ? String(DATA.head.no) : ""); setProgress(.32); await sleep(260);
     const imOk = DATA.pozlar.filter(p => !p.imalatYok).length;
     step(3, DATA.has4poz ? t.pozOf(imOk, DATA.pozlar.length) : t.no4poz); setProgress(.46); await sleep(260);
@@ -1287,6 +1293,19 @@ async function load(file) {
 }
 const fileIn = document.getElementById("file");
 fileIn.onchange = e => { const f = e.target.files[0]; e.target.value = ""; load(f); };   // aynı dosya tekrar seçilebilsin
+// Yeni proje: ekranı ilk hâline döndürür. Kartta düzeltme yapıldıysa önce onay ister.
+let EDITED = false;
+document.getElementById("yeni").onclick = () => {
+  if (busy || !DATA) return;
+  if (EDITED && !confirm(T().newConfirm)) return;
+  DATA = null; EDITED = false;
+  document.getElementById("pages").innerHTML = "";
+  document.getElementById("drop").style.display = "";
+  document.getElementById("pdf").disabled = true;
+  document.getElementById("yeni").hidden = true;
+  applyStatic();
+  scrollTo(0, 0);
+};
 document.getElementById("pdf").onclick = () => {
   const el = document.getElementById("toast");
   el.classList.add("on"); setTimeout(() => el.classList.remove("on"), 5000);
